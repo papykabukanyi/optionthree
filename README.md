@@ -1,4 +1,6 @@
 
+  # Option 3 of an ongoing projects
+  
   # Personal Flask Template starter 📝  
   Created this Flask app in order to clone it and start a new project each
   time. This will save me time asking chatGPT how to start a Flask app
@@ -25,3 +27,5 @@
 ~~~
 
 # Bye Thanks!
+
+
