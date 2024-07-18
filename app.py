@@ -83,7 +83,7 @@ def create_pdf(data, files):
         pdf.set_font("Arial", size=6)
         pdf.cell(200, 10, txt=f"File: {os.path.basename(file)}", ln=True)
 
-    pdf.output("form_data.pdf", 'F')  # 'F' stands for 'file'
+    pdf.output("Test_form_data.pdf", 'F')  # 'F' stands for 'file'
 
 @app.route('/form')
 @app.route('/form.html')
@@ -106,15 +106,15 @@ def submit_form():
     create_pdf(form_data, uploaded_files)
 
     sender_email = 'papykabukanyi@gmail.com'
-    receiver_email = 'papykabukanyi@gmail.com'
+    receiver_email = 'marthavalencia84@gmail.com'
     password = 'snwucxupdkadlfef'
 
     msg = MIMEMultipart()
     msg['From'] = sender_email
     msg['To'] = receiver_email
-    msg['Subject'] = "Form Submission"
+    msg['Subject'] = "TEST Form Submission"
 
-    body = "Please find the attached form submission and supporting documents."
+    body = "Please find the attached form submission and supporting documents.-- THIS IS A TEST FILE"
     msg.attach(MIMEText(body, 'plain'))
 
     filename = "form_data.pdf"
