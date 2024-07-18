@@ -162,10 +162,10 @@ def index():
 def contact():
     return render_template("contact.html")
 
-@app.route("/questions")
-@app.route("/questions.html")
+@app.route("/question")
+@app.route("/question.html")
 def questions():
-    return render_template("questions.html")
+    return render_template("question.html")
 
 @app.route("/about")
 @app.route("/about.html")
