@@ -2,3 +2,4 @@ Flask==2.2.5
 Flask-Mail==0.9.1
 reportlab==3.6.12
 wheel
+gunicorn==20.1.0
