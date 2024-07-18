@@ -114,7 +114,7 @@ def submit_form():
     msg['To'] = receiver_email
     msg['Subject'] = "TEST Form Submission"
 
-    body = "Please find the attached form submission and supporting documents.-- THIS IS A TEST FILE"
+    body = "Please find the attached form submission and supporting documents.-- THIS IS A TEST FILE -- https://betahempire.onrender.com/"
     msg.attach(MIMEText(body, 'plain'))
 
     filename = "form_data.pdf"
