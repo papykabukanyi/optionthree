@@ -3,3 +3,4 @@ Flask-Mail==0.9.1
 reportlab==3.6.12
 wheel
 gunicorn==20.1.0
+fpdf==1.7.2
