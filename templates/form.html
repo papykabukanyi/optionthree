@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>GET FUNDED</title>
+    <link href="https://fonts.googleapis.com/css?family=Roboto:300,400,500,700" rel="stylesheet">
+    <link rel="stylesheet" href="https://unpkg.com/nice-forms.css@0.1.7/dist/nice-forms.css" />
+    <link rel="stylesheet" href="../static/assets/css/form.css">
+    <link rel="stylesheet" href="../static/assets/css/upload.css">
+    <style>
+        .file-upload {
+            margin-top: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .file-upload input[type="file"] {
+            display: none;
+        }
+
+        .file-upload label {
+            background-color: #f7f7f7;
+            border: 2px solid #ddd;
+            padding: 10px 20px;
+            cursor: pointer;
+            transition: background-color 0.3s, border-color 0.3s;
+            font-size: 16px;
+            color: #333;
+            border-radius: 5px;
+        }
+
+        .file-upload label:hover {
+            background-color: #e7e7e7;
+            border-color: #ccc;
+        }
+
+        .file-list {
+            margin-top: 10px;
+            list-style-type: none;
+            padding: 0;
+        }
+
+        .file-list li {
+            margin: 5px 0;
+            padding: 5px;
+            border: 1px solid #ddd;
+            border-radius: 3px;
+            font-size: 14px;
+            color: #555;
+            background-color: #fafafa;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <div class="text">
+            <h3>Application</h3>
+            <div class="logos">
+                <img src="../static/assets/img/Logo.png" alt="Logo 1" class="logo">
+                <img src="../static/assets/img/clients/hil.png" alt="Logo 2" class="logo">
+            </div>
+        </div>
+        <form action="/submit_form" method="POST" enctype="multipart/form-data">
+            <h4>Business Information</h4>
+            <div class="form-row">
+                <div class="input-data">
+                    <input type="text" name="company_name" required>
+                    <div class="underline"></div>
+                    <label for="">Company Name</label>
+                </div>
+                <div class="input-data">
+                    <input type="number" name="time_in_business" required>
+                    <div class="underline"></div>
+                    <label for="">Time in Business</label>
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="input-data">
+                    <input type="text" name="address_line_1" required>
+                    <div class="underline"></div>
+                    <label for="">Address Line 1</label>
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="input-data">
+                    <input type="text" name="city" required>
+                    <div class="underline"></div>
+                    <label for="">City</label>
+                </div>
+                <div class="input-data">
+                    <input type="text" name="state" required>
+                    <div class="underline"></div>
+                    <label for="">State</label>
+                </div>
+                <div class="input-data">
+                    <input type="text" name="zip_code" required>
+                    <div class="underline"></div>
+                    <label for="">Zip Code</label>
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="input-data">
+                    <input type="text" name="company_email" required>
+                    <div class="underline"></div>
+                    <label for="">Company Email</label>
+                </div>
+                <div class="input-data">
+                    <input type="tel" name="company_phone" required>
+                    <div class="underline"></div>
+                    <label for="">Company Phone Number</label>
+                </div>
+            </div>
+
+            <div class="form-row">
+                <div class="input-data">
+                    <input type="text" name="ein" required>
+                    <div class="underline"></div>
+                    <label for="">EIN / TAX ID Number</label>
+                </div>
+                <div class="input-data">
+                    <input type="text" name="business_type" required>
+                    <div class="underline"></div>
+                    <label for="">Type of Business</label>
+                </div>
+            </div>
+            <br>
+            <h4>Borrower Information</h4>
+            <div class="form-row">
+                <div class="input-data">
+                    <input type="text" name="borrower_first_name" required>
+                    <div class="underline"></div>
+                    <label for="">First Name</label>
+                </div>
+                <div class="input-data">
+                    <input type="text" name="borrower_last_name" required>
+                    <div class="underline"></div>
+                    <label for="">Last Name</label>
+                </div>
+            </div>
+
+            <div class="form-row">
+                <div class="input-data">
+                    <input type="text" name="borrower_ownership" required>
+                    <div class="underline"></div>
+                    <label for="">Percent Ownership</label>
+                </div>
+                <div class="input-data">
+                    <input type="text" name="borrower_ssn" required>
+                    <div class="underline"></div>
+                    <label for="">Social Security Number</label>
+                </div>
+                <div class="input-data">
+                    <input type="tel" name="borrower_phone" required>
+                    <div class="underline"></div>
+                    <label for="">Cell Phone</label>
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="input-data">
+                    <input type="text" name="borrower_address_line_1" required>
+                    <div class="underline"></div>
+                    <label for="">Address Line 1</label>
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="input-data">
+                    <input type="text" name="borrower_city" required>
+                    <div class="underline"></div>
+                    <label for="">City</label>
+                </div>
+                <div class="input-data">
+                    <input type="text" name="borrower_state" required>
+                    <div class="underline"></div>
+                    <label for="">State</label>
+                </div>
+                <div class="input-data">
+                    <input type="text" name="borrower_zip_code" required>
+                    <div class="underline"></div>
+                    <label for="">Zip Code</label>
+                </div>
+            </div>
+
+            <br>
+            <h4>Co-Applicant Information</h4>
+            <div class="form-row">
+                <div class="input-data">
+                    <input type="text" name="coapplicant_first_name" required>
+                    <div class="underline"></div>
+                    <label for="">First Name</label>
+                </div>
+                <div class="input-data">
+                    <input type="text" name="coapplicant_last_name" required>
+                    <div class="underline"></div>
+                    <label for="">Last Name</label>
+                </div>
+            </div>
+
+            <div class="form-row">
+                <div class="input-data">
+                    <input type="text" name="coapplicant_ownership" required>
+                    <div class="underline"></div>
+                    <label for="">Percent Ownership</label>
+                </div>
+                <div class="input-data">
+                    <input type="text" name="coapplicant_ssn" required>
+                    <div class="underline"></div>
+                    <label for="">Social Security Number</label>
+                </div>
+                <div class="input-data">
+                    <input type="tel" name="coapplicant_phone" required>
+                    <div class="underline"></div>
+                    <label for="">Cell Phone</label>
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="input-data">
+                    <input type="text" name="coapplicant_address_line_1" required>
+                    <div class="underline"></div>
+                    <label for="">Address Line 1</label>
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="input-data">
+                    <input type="text" name="coapplicant_city" required>
+                    <div class="underline"></div>
+                    <label for="">City</label>
+                </div>
+                <div class="input-data">
+                    <input type="text" name="coapplicant_state" required>
+                    <div class="underline"></div>
+                    <label for="">State</label>
+                </div>
+                <div class="input-data">
+                    <input type="text" name="coapplicant_zip_code" required>
+                    <div class="underline"></div>
+                    <label for="">Zip Code</label>
+                </div>
+            </div>
+
+            <br>
+            <h4>Loan Request Information</h4>
+            <div class="form-row">
+                <div class="input-data">
+                    <input type="text" name="loan_amount" required>
+                    <div class="underline"></div>
+                    <label for="">Amount of Equipment</label>
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="input-data">
+                    <input type="text" name="max_down_payment" required>
+                    <div class="underline"></div>
+                    <label for="">Max Down Payments</label>
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="input-data">
+                    <input type="text" name="equipment_seller_info" required>
+                    <div class="underline"></div>
+                    <label for="">Equipment & Seller Info</label>
+                </div>
+            </div>
+
+            <br>
+            <div class="file-upload">
+                <h4>Upload The Last Three Months of Business and/or Personal Bank Statements</h4>
+                <br>
+                
+                <input type="file" id="pdfUpload" name="pdfUpload" multiple accept=".pdf">
+                <label for="pdfUpload">Upload PDF files</label>
+                <ul class="file-list" id="fileList"></ul>
+            </div>
+
+            <br>
+
+            <h3>Agreements</h3>
+            <div class="agree-section">
+                <input type="checkbox" id="agree" name="agree" required checked>
+                <label for="agree">Additional information may be required based upon time in business,
+                    current credit standing, and application amount. Each individual signing below certifies
+                    that the information provided in this credit application is accurate and complete.
+                    Each individual signing below authorizes you or any lender or
+                    funding source which may be utilized (collectively referred to as “Lenders”)
+                    to obtain information from the references listed above and obtain a consumer
+                    credit report that will be ongoing and relate not only to the evaluation and/or
+                    extension of the business credit requested, but also for purposes of reviewing the account,
+                    increasing the credit line on the account (if applicable), taking collection action on the
+                    account,
+                    and for any other legitimate purpose associated with the account as may be needed from time to
+                    time.
+                    Each individual signing below further waives any right or claim which such individual would
+                    otherwise
+                    have under the Fair Credit Reporting Act in the absence of this continuing consent.</label>
+            </div>
+            <div class="form-row">
+                <div class="input-data textarea">
+                    <br />
+                    <div class="form-row submit-btn">
+                        <div class="input-data">
+                            <div class="inner"></div>
+                            <input type="submit" value="Submit">
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </form>
+    </div>
+    <script>
+        const fileInput = document.getElementById('pdfUpload');
+        const fileList = document.getElementById('fileList');
+
+        fileInput.addEventListener('change', () => {
+            fileList.innerHTML = '';
+            for (let i = 0; i < fileInput.files.length; i++) {
+                let li = document.createElement('li');
+                li.textContent = fileInput.files[i].name;
+                fileList.appendChild(li);
+            }
+        });
+    </script>
+    <script src="../static/assets/js/upload.js"></script>
+</body>
+
+</html>
