@@ -1385,6 +1385,14 @@ a.text-dark:hover, a.text-dark:focus {
   overflow: hidden;
 }
 
+.page-sectionabout {
+  position: relative;
+  padding-top: 30px;
+  padding-bottom: 0px;
+  background-color: #fff;
+  overflow: hidden;
+}
+
 .page-sectiontwo {
   position: relative;
   padding-top: 16px;
@@ -1435,7 +1443,7 @@ a.text-dark:hover, a.text-dark:focus {
   height: 40px;
   line-height: 44px;
   background-color: #fff;
-  color: #645F88;
+  color: #ffffff;
   text-align: center;
   border-radius: 40px;
   box-shadow: 0 2px 6px rgba(100, 95, 136, 0.24);
@@ -1468,7 +1476,7 @@ a.text-dark:hover, a.text-dark:focus {
   left: 0;
   width: 100%;
   height: 100%;
-  background: rgba(52, 53, 49, 0.7);
+  background: rgba(230, 231, 230, 0.7);
   z-index: 1;
 }
 
@@ -1485,8 +1493,8 @@ a.text-dark:hover, a.text-dark:focus {
   display: block;
   text-transform: uppercase;
   letter-spacing: 3px;
-  color: #595959;
-  font-weight: 500;
+  color: #000000;
+  font-weight: 700;
   margin-bottom: 8px;
 }
 
@@ -1508,7 +1516,7 @@ a.text-dark:hover, a.text-dark:focus {
   left: 0;
   width: 100%;
   height: 8px;
-  background-color: #484848;
+  background-color: #ffffff;
   z-index: -1;
 }
 
@@ -1547,7 +1555,7 @@ a.text-dark:hover, a.text-dark:focus {
   line-height: 32px;
   text-align: center;
   background-color: #fff;
-  color: #000000;
+  color: #ffffff;
 }
 
 
@@ -1557,7 +1565,7 @@ a.text-dark:hover, a.text-dark:focus {
   padding: 32px 20px;
   max-width: 300px;
   text-align: center;
-  color: #898798;
+  color: #ffffff;
   border-radius: 8px;
   box-shadow: 0 3px 12px rgba(95, 92, 120, 0.12);
 }
@@ -1644,7 +1652,7 @@ a.text-dark:hover, a.text-dark:focus {
   width: 120px;
   height: 26px;
   line-height: 26px;
-  background-color: #0ac7f6;
+  background-color: #3b3b3b;
   color: #fff;
   transform: rotate(45deg);
 }
@@ -1705,7 +1713,7 @@ a.text-dark:hover, a.text-dark:focus {
 }
 
 .card-pricing.active .btn-outline:hover {
-  color: #000000;
+  color: #ffffff;
 }
 
 
@@ -1736,10 +1744,6 @@ a.text-dark:hover, a.text-dark:focus {
   overflow: hidden;
 }
 
-.card-blog .avatar img {
-  width: 100%;
-  height: 100%;
-}
 
 .card-blog .entry-footer {
   display: inline-block;
@@ -1747,13 +1751,13 @@ a.text-dark:hover, a.text-dark:focus {
 }
 
 .card-blog .post-author {
-  font-weight: 500;
-  color: #645F88;
+  font-weight: 900;
+  color: #ffffff;
 }
 
 .card-blog .post-date {
   font-size: 13px;
-  color: #B4B2C5;
+  color: #ffffff;
 }
 
 .card-blog .post-title {
@@ -1763,12 +1767,12 @@ a.text-dark:hover, a.text-dark:focus {
 
 .card-blog .post-title a {
   font-weight: 500;
-  color: #2D2B3A;
+  color: #ffffff;
 }
 
 .card-blog .post-excerpt {
   font-size: 14px;
-  color: #898798;
+  color: #ffffff;
 }
 
 .card-blog .footer {
@@ -1777,7 +1781,7 @@ a.text-dark:hover, a.text-dark:focus {
   left: 20px;
 }
 
-.card-blog-row *:first-child .card-blog {
+.card-blog-row .card-blog {
   background-color: #000000;
 }
 
@@ -1822,8 +1826,8 @@ a.text-dark:hover, a.text-dark:focus {
 }
 
 .client-section {
-  padding: 64px 0;
-  background-color: #F6F5FC;
+  padding: 10px 0;
+  background-color: #afafaf;
 }
 
 .client-section .item {
@@ -2003,7 +2007,7 @@ a.text-dark:hover, a.text-dark:focus {
 
 .blog-single-wrap .post-title {
   font-weight: 500;
-  color: #212529;
+  color: #ffffff;
 }
 
 .blog-single-wrap .post-meta {
@@ -2019,7 +2023,7 @@ a.text-dark:hover, a.text-dark:focus {
   border-radius: 50%;
   font-size: 12px;
   text-align: center;
-  background-color: #645F88;
+  background-color: #fefefe;
   color: #fff;
 }
 
@@ -2124,19 +2128,19 @@ a.text-dark:hover, a.text-dark:focus {
 }
 
 .blog-item .post-title a {
-  color: #8e8aad;
+  color: #ffffff;
   transition: all .2s ease;
 }
 
 .blog-item .post-title a:hover {
-  color: #000000;
+  color: #ffffff;
   text-decoration: none;
 }
 
 .blog-item .meta a {
   margin-right: 6px;
   font-size: 12px;
-  color: #645F88;
+  color: #ffffff;
 }
 
 .blog-item .meta a:hover {
@@ -2149,7 +2153,7 @@ a.text-dark:hover, a.text-dark:focus {
   padding: 4px 10px;
   font-size: 13px;
   background-color: #EDECF5;
-  color: #645F88;
+  color: #fdfdff;
   border-radius: 3px;
   transition: all .2s ease;
 }
