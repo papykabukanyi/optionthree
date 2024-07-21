@@ -270,15 +270,15 @@
             <h2 class="title-section">Drop Us a Line</h2>
             <div class="divider"></div>
 
-            <form action="#">
+            <form action="/send_email" method="POST">
               <div class="py-2">
-                <input type="text" class="form-control" placeholder="Full name">
+                <input type="text" class="form-control" name="full_name" placeholder="Full name" required>
               </div>
               <div class="py-2">
-                <input type="text" class="form-control" placeholder="Email">
+                <input type="email" class="form-control" name="email" placeholder="Email" required>
               </div>
               <div class="py-2">
-                <textarea rows="6" class="form-control" placeholder="Enter message"></textarea>
+                <textarea rows="6" class="form-control" name="message" placeholder="Enter message" required></textarea>
               </div>
               <button type="submit" class="btn btn-primary rounded-pill mt-4">Send Message</button>
             </form>
