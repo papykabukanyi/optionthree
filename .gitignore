@@ -1,0 +1,33 @@
+# Python-related files
+__pycache__/
+*.py[cod]
+*.egg
+*.egg-info/
+dist/
+build/
+.eggs/
+*.pyc
+
+# Flask instance folder
+instance/
+
+# Environment variables
+.env
+
+# OS-specific files
+.DS_Store
+Thumbs.db
+
+# Virtual environments
+venv/
+.venv/
+
+# Logs
+*.log
+*.out
+*.err
+
+# IDE-specific files
+.idea/
+.vscode/
+.ipynb_checkpoints/
