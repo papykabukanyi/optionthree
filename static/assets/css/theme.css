@@ -153,7 +153,7 @@ a.text-accent:hover, a.text-accent:focus {
 }
 
 a.text-secondary:hover, a.text-secondary:focus {
-  color: #59547c !important;
+  color: #000000 !important;
 }
 
 .text-success {
@@ -478,21 +478,21 @@ a.text-dark:hover, a.text-dark:focus {
 
 .btn-secondary {
   color: #fff;
-  background-color: #645F88;
+  background-color: #000000;
   border-color: transparent;
 }
 
 .btn-secondary.disabled, .btn-secondary:disabled {
   color: #fff;
-  background-color: #59547c;
+  background-color: #000000;
   border-color: transparent;
 }
 
 .btn-secondary:not(:disabled):not(.disabled):active, .btn-secondary:not(:disabled):not(.disabled).active,
 .show > .btn-secondary.dropdown-toggle {
   color: #fff;
-  background-color: #645F88;
-  border-color: #59547c;
+  background-color: #000000;
+  border-color: #000000;
 }
 
 .btn-secondary:not(:disabled):not(.disabled):active:focus, .btn-secondary:not(:disabled):not(.disabled).active:focus,
@@ -603,27 +603,27 @@ a.text-dark:hover, a.text-dark:focus {
 }
 
 .btn-light:hover {
-  color: #8e8aad;
+  color: #000000;
   background-color: #F6F5FC;
   border-color: transparent;
 }
 
 .btn-light:focus, .btn-light.focus {
-  color: #8e8aad;
+  color: #000000;
   background-color: #d5dfdc;
   border-color: transparent;
   box-shadow: none;
 }
 
 .btn-light.disabled, .btn-light:disabled {
-  color: #8e8aad;
+  color: #000000;
   background-color: #d0ddd9;
   border-color: transparent;
 }
 
 .btn-light:not(:disabled):not(.disabled):active, .btn-light:not(:disabled):not(.disabled).active,
 .show > .btn-light.dropdown-toggle {
-  color: #8e8aad;
+  color: #000000;
   background-color: #F5F9F6;
   border-color: #d0ddd9;
 }
@@ -635,7 +635,7 @@ a.text-dark:hover, a.text-dark:focus {
 
 .btn-dark {
   color: #fff;
-  background-color: #2D2B3A;
+  background-color: #000000;
   border-color: transparent;
 }
 
@@ -666,7 +666,7 @@ a.text-dark:hover, a.text-dark:focus {
 .btn-danger:hover,
 .btn-dark:hover {
   color: #fff;
-  background-color: #645F88;
+  background-color: #000000;
   border-color: transparent;
 }
 
@@ -679,14 +679,14 @@ a.text-dark:hover, a.text-dark:focus {
 .btn-danger:focus, .btn-danger.focus,
 .btn-dark:focus, .btn-dark.focus {
   color: #fff;
-  background-color: #8e8aad;
+  background-color: #000000;
   border-color: transparent;
   box-shadow: none;
 }
 
 .btn-outline {
   border-color: #D7D5E9;
-  color: #645F88;
+  color: #000000;
 }
 
 .btn-outline:hover {
@@ -709,7 +709,7 @@ a.text-dark:hover, a.text-dark:focus {
 }
 
 .btn-outline-primary.disabled, .btn-outline-primary:disabled {
-  color: #6C55F9;
+  color: #000000;
   background-color: transparent;
 }
 
@@ -758,14 +758,14 @@ a.text-dark:hover, a.text-dark:focus {
 }
 
 .btn-outline-secondary {
-  color: #645F88;
-  border-color: #645F88;
+  color: #000000;
+  border-color: #000000;
 }
 
 .btn-outline-secondary:hover {
   color: #fff;
-  background-color: #645F88;
-  border-color: #645F88;
+  background-color: #000000;
+  border-color: #000000;
 }
 
 .btn-outline-secondary:focus, .btn-outline-secondary.focus {
@@ -773,15 +773,15 @@ a.text-dark:hover, a.text-dark:focus {
 }
 
 .btn-outline-secondary.disabled, .btn-outline-secondary:disabled {
-  color: #645F88;
+  color: #000000;
   background-color: transparent;
 }
 
 .btn-outline-secondary:not(:disabled):not(.disabled):active, .btn-outline-secondary:not(:disabled):not(.disabled).active,
 .show > .btn-outline-secondary.dropdown-toggle {
   color: #fff;
-  background-color: #645F88;
-  border-color: #645F88;
+  background-color: #000000;
+  border-color: #000000;
 }
 
 .btn-outline-secondary:not(:disabled):not(.disabled):active:focus, .btn-outline-secondary:not(:disabled):not(.disabled).active:focus,
@@ -1107,7 +1107,7 @@ a.text-dark:hover, a.text-dark:focus {
 }
 
 .navbar-light .navbar-nav .nav-link:hover, .navbar-light .navbar-nav .nav-link:focus {
-  color: #645F88;
+  color: #000000;
 }
 
 .navbar-light .navbar-nav .show > .nav-link,
