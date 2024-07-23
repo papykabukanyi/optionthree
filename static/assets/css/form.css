@@ -198,9 +198,22 @@ form .form-row .textarea {
     font-size: 14px;
 }
 
-@media (max-width: 700px) {
+@media (max-width: 800px) {
+    .container {
+        padding: 20px;
+        width: 100%;
+    }
+
     .container .text {
         font-size: 30px;
+    }
+
+    .logos {
+        gap: 20px;
+    }
+
+    .logo {
+        width: 100px;
     }
 
     .container form {
@@ -212,10 +225,38 @@ form .form-row .textarea {
     }
 
     form .form-row .input-data {
-        margin: 35px 0 !important;
+        margin: 20px 0;
     }
 
     .submit-btn .input-data {
-        width: 40% !important;
+        width: 100%;
+    }
+}
+
+@media (max-width: 600px) {
+    .container .text {
+        font-size: 25px;
+    }
+
+    .logo {
+        width: 80px;
+    }
+
+    form .form-row .input-data {
+        margin: 15px 0;
+    }
+}
+
+@media (max-width: 400px) {
+    .container .text {
+        font-size: 20px;
+    }
+
+    .logo {
+        width: 60px;
+    }
+
+    form .form-row .input-data {
+        margin: 10px 0;
     }
 }
