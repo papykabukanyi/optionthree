@@ -1,0 +1,6 @@
+User-agent: *
+Disallow: /static/assets/
+Disallow: /contact.html
+Disallow: /form.html
+
+Sitemap: https://www.hempire-enterprise.com/sitemap.xml
