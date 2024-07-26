@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="https://www.sitemaps.org/schemas/sitemap/0.9">
+
+  <!-- Home Page -->
+  <url>
+    <loc>https://www.hempire-enterprise.com/index.html</loc>
+    <lastmod>2024-07-26</lastmod>
+    <priority>1.0</priority>
+  </url>
+
+  <!-- About Us Page -->
+  <url>
+    <loc>https://www.hempire-enterprise.com/about.html</loc>
+    <lastmod>2024-07-26</lastmod>
+    <priority>0.8</priority>
+  </url>
+
+  <!-- Q&A Page -->
+  <url>
+    <loc>https://www.hempire-enterprise.com/question.html</loc>
+    <lastmod>2024-07-26</lastmod>
+    <priority>0.8</priority>
+  </url>
+
+  <!-- Contact Page -->
+  <url>
+    <loc>https://www.hempire-enterprise.com/contact.html</loc>
+    <lastmod>2024-07-26</lastmod>
+    <priority>0.5</priority>
+  </url>
+
+  <!-- Apply Now Form Page -->
+  <url>
+    <loc>https://www.hempire-enterprise.com/form.html</loc>
+    <lastmod>2024-07-26</lastmod>
+    <priority>0.6</priority>
+  </url>
+
+</urlset>
