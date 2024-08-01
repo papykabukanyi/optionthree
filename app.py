@@ -100,11 +100,11 @@ def submit_form():
             uploaded_files.append(file_path)
     pdf_filename = create_pdf(form_data, uploaded_files)
     sender_email = os.getenv('SENDER_EMAIL')
-    receiver_email = os.getenv('RECEIVER_EMAIL')
+    receiver_emails = [os.getenv('RECEIVER_EMAIL_1'), os.getenv('RECEIVER_EMAIL_2')]
     password = os.getenv('SENDER_PASSWORD')
     msg = MIMEMultipart()
     msg['From'] = sender_email
-    msg['To'] = receiver_email
+    msg['To'] = ", ".join(receiver_emails)
     msg['Subject'] = "You Have a New Application!"
     body = "Please find the attached form submission and supporting documents. \nApplication sent from https://hempire-enterprise.com/"
     msg.attach(MIMEText(body, 'plain'))
@@ -125,7 +125,7 @@ def submit_form():
     server.starttls()
     server.login(sender_email, password)
     text = msg.as_string()
-    server.sendmail(sender_email, receiver_email, text)
+    server.sendmail(sender_email, receiver_emails, text)
     server.quit()
     for file in uploaded_files:
         os.remove(file)
@@ -165,10 +165,10 @@ def send_email():
     message = request.form['message']
     sender_email = os.getenv('SENDER_EMAIL')
     sender_password = os.getenv('SENDER_PASSWORD')
-    receiver_email = os.getenv('RECEIVER_EMAIL')
+    receiver_emails = [os.getenv('RECEIVER_EMAIL_1'), os.getenv('RECEIVER_EMAIL_2')]
     msg = MIMEMultipart()
     msg['From'] = sender_email
-    msg['To'] = receiver_email
+    msg['To'] = ", ".join(receiver_emails)
     msg['Subject'] = "New Contact Form Submission"
     body = f"Name: {full_name}\nEmail: {email}\nPhone: {phone_number}\nMessage: {message}"
     msg.attach(MIMEText(body, 'plain'))
@@ -177,7 +177,7 @@ def send_email():
         server.starttls()
         server.login(sender_email, sender_password)
         text = msg.as_string()
-        server.sendmail(sender_email, receiver_email, text)
+        server.sendmail(sender_email, receiver_emails, text)
         server.quit()
         flash('Message sent successfully!')
     except Exception as e:
