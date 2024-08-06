@@ -17,7 +17,8 @@ service-account-file.json
 
 
 # .gitignore
-service-account-file.json
+service-account.json
+
 
 # OS-specific files
 .DS_Store
