@@ -13,7 +13,7 @@ instance/
 
 # Environment variables
 .env
-
+service-account-file.json
 # OS-specific files
 .DS_Store
 Thumbs.db
