@@ -1,5 +1,4 @@
 import os
-import datetime
 from flask import Flask, request, render_template, redirect, url_for, flash
 from werkzeug.utils import secure_filename
 from fpdf import FPDF
@@ -9,10 +8,6 @@ from email.mime.text import MIMEText
 from email.mime.base import MIMEBase
 from email import encoders
 from dotenv import load_dotenv
-import json
-
-from google.oauth2 import service_account
-from googleapiclient.discovery import build
 
 load_dotenv()  # Load environment variables from .env file
 
@@ -23,18 +18,6 @@ app.secret_key = os.getenv('SECRET_KEY')
 
 if not os.path.exists(app.config['UPLOAD_FOLDER']):
     os.makedirs(app.config['UPLOAD_FOLDER'])
-
-SCOPES = ['https://www.googleapis.com/auth/spreadsheets']
-SERVICE_ACCOUNT_FILE = os.getenv('SERVICE_ACCOUNT_FILE')
-creds = None
-
-creds = service_account.Credentials.from_service_account_file(
-        SERVICE_ACCOUNT_FILE, scopes=SCOPES)
-
-# The ID and range of the spreadsheet.
-SAMPLE_SPREADSHEET_ID = os.getenv('SAMPLE_SPREADSHEET_ID')
-
-service = build('sheets', 'v4', credentials=creds)
 
 def allowed_file(filename):
     return '.' in filename and \
@@ -99,17 +82,6 @@ def create_pdf(data, files):
     pdf.output(pdf_filename)
     return pdf_filename
 
-def update_google_sheet(data):
-    values = [
-        [datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")] + list(data.values())
-    ]
-    body = {
-        'values': values
-    }
-    result = service.spreadsheets().values().append(
-        spreadsheetId=SAMPLE_SPREADSHEET_ID, range="Applications!A1",
-        valueInputOption="RAW", body=body).execute()
-
 @app.route('/form')
 @app.route('/form.html')
 def form():
@@ -127,10 +99,6 @@ def submit_form():
             file.save(file_path)
             uploaded_files.append(file_path)
     pdf_filename = create_pdf(form_data, uploaded_files)
-
-    # Update Google Sheet
-    update_google_sheet(form_data)
-
     sender_email = os.getenv('SENDER_EMAIL')
     receiver_emails = [os.getenv('RECEIVER_EMAIL_1'), os.getenv('RECEIVER_EMAIL_2')]
     password = os.getenv('SENDER_PASSWORD')
