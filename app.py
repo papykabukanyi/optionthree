@@ -1,4 +1,6 @@
 import os
+import uuid
+from datetime import datetime
 from flask import Flask, request, render_template, redirect, url_for, flash
 from werkzeug.utils import secure_filename
 from fpdf import FPDF
@@ -8,6 +10,7 @@ from email.mime.text import MIMEText
 from email.mime.base import MIMEBase
 from email import encoders
 from dotenv import load_dotenv
+import requests
 
 load_dotenv()  # Load environment variables from .env file
 
@@ -23,7 +26,29 @@ def allowed_file(filename):
     return '.' in filename and \
            filename.rsplit('.', 1)[1].lower() in app.config['ALLOWED_EXTENSIONS']
 
-def create_pdf(data, files):
+def get_client_ip(request):
+    if request.environ.get('HTTP_X_FORWARDED_FOR'):
+        ip = request.environ['HTTP_X_FORWARDED_FOR']
+    else:
+        ip = request.environ['REMOTE_ADDR']
+    return ip
+
+def get_location(ip):
+    try:
+        response = requests.get(f'http://ip-api.com/json/{ip}')
+        data = response.json()
+        return f"{data['city']}, {data['regionName']}, {data['country']}"
+    except:
+        return "Unknown Location"
+
+def format_date(date_str):
+    try:
+        date_obj = datetime.strptime(date_str, '%Y-%m-%d')
+        return date_obj.strftime('%m/%d/%Y')
+    except ValueError:
+        return date_str
+
+def create_pdf(data, files, submission_time, browser, ip_address, unique_id, location):
     pdf = FPDF()
     pdf.add_page()
     pdf.set_font("Arial", size=12)
@@ -45,20 +70,24 @@ def create_pdf(data, files):
     pdf.cell(0, 8, txt="Borrower Information", ln=True)
     pdf.set_font("Arial", size=6)
     pdf.cell(0, 6, txt=f"Name: {data.get('borrower_first_name', '')} {data.get('borrower_last_name', '')}", ln=True)
+    pdf.cell(0, 6, txt=f"Date of Birth: {format_date(data.get('borrower_dob', ''))}", ln=True)
     pdf.cell(0, 6, txt=f"Percent Ownership: {data.get('borrower_ownership', '')}", ln=True)
     pdf.cell(0, 6, txt=f"SSN: {data.get('borrower_ssn', '')}", ln=True)
     pdf.cell(0, 6, txt=f"Phone: {data.get('borrower_phone', '')}", ln=True)
     pdf.cell(0, 6, txt=f"Email: {data.get('borrower_email', '')}", ln=True)
+    pdf.cell(0, 6, txt=f"Preferred Method of Contact: {data.get('borrower_preferred_contact', '')}", ln=True)
     pdf.cell(0, 6, txt=f"Address: {data.get('borrower_address_line_1', '')}, {data.get('borrower_city', '')}, {data.get('borrower_state', '')} {data.get('borrower_zip_code', '')}", ln=True)
     pdf.ln(4)
     pdf.set_font("Arial", 'B', 8)
     pdf.cell(0, 8, txt="Co-Applicant Information", ln=True)
     pdf.set_font("Arial", size=6)
     pdf.cell(0, 6, txt=f"Name: {data.get('coapplicant_first_name', '')} {data.get('coapplicant_last_name', '')}", ln=True)
+    pdf.cell(0, 6, txt=f"Date of Birth: {format_date(data.get('coapplicant_dob', ''))}", ln=True)
     pdf.cell(0, 6, txt=f"Percent Ownership: {data.get('coapplicant_ownership', '')}", ln=True)
     pdf.cell(0, 6, txt=f"SSN: {data.get('coapplicant_ssn', '')}", ln=True)
     pdf.cell(0, 6, txt=f"Phone: {data.get('coapplicant_phone', '')}", ln=True)
     pdf.cell(0, 6, txt=f"Email: {data.get('coapplicant_email', '')}", ln=True)
+    pdf.cell(0, 6, txt=f"Preferred Method of Contact: {data.get('coapplicant_preferred_contact', '')}", ln=True)
     pdf.cell(0, 6, txt=f"Address: {data.get('coapplicant_address_line_1', '')}, {data.get('coapplicant_city', '')}, {data.get('coapplicant_state', '')} {data.get('coapplicant_zip_code', '')}", ln=True)
     pdf.ln(4)
     pdf.set_font("Arial", 'B', 8)
@@ -69,9 +98,14 @@ def create_pdf(data, files):
     pdf.cell(0, 6, txt=f"Equipment & Seller Info: {data.get('equipment_seller_info', '')}", ln=True)
     pdf.ln(4)
     pdf.set_font("Arial", 'B', 8)
-    pdf.cell(0, 8, txt="Agreements", ln=True)
-    pdf.set_font("Arial", size=2)
-    pdf.multi_cell(0, 6, txt="Additional information may be required based upon time in business, current credit standing, and application amount. Each individual signing below certifies that the information provided in this credit application is accurate and complete. Each individual signing below authorizes you or any lender or funding source which may be utilized (collectively referred to as 'Lenders') to obtain information from the references listed above and obtain a consumer credit report that will be ongoing and relate not only to the evaluation and/or extension of the business credit requested, but also for purposes of reviewing the account, increasing the credit line on the account (if applicable), taking collection action on the account, and for any other legitimate purpose associated with the account as may be needed from time to time. Each individual signing below further waives any right or claim which such individual would otherwise have under the Fair Credit Reporting Act in the absence of this continuing consent.")
+    pdf.cell(0, 8, txt="Signature", ln=True)
+    pdf.set_font("Arial", size=6)
+    pdf.cell(0, 6, txt=f"Borrower Name: {data.get('borrower_first_name', '')} {data.get('borrower_last_name', '')}", ln=True)
+    pdf.cell(0, 6, txt=f"Submission Time: {submission_time}", ln=True)
+    pdf.cell(0, 6, txt=f"Browser: {browser}", ln=True)
+    pdf.cell(0, 6, txt=f"IP Address: {ip_address}", ln=True)
+    pdf.cell(0, 6, txt=f"Unique ID: {unique_id}", ln=True)
+    pdf.cell(0, 6, txt=f"Location: {location}", ln=True)
     pdf.ln(10)
     pdf.set_font("Arial", 'B', 8)
     pdf.cell(0, 8, txt="Attached Files", ln=True)
@@ -98,7 +132,15 @@ def submit_form():
             file_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
             file.save(file_path)
             uploaded_files.append(file_path)
-    pdf_filename = create_pdf(form_data, uploaded_files)
+
+    submission_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    browser = request.user_agent.string
+    ip_address = get_client_ip(request)
+    unique_id = str(uuid.uuid4())
+    location = get_location(ip_address)
+
+    pdf_filename = create_pdf(form_data, uploaded_files, submission_time, browser, ip_address, unique_id, location)
+
     sender_email = os.getenv('SENDER_EMAIL')
     receiver_emails = [os.getenv('RECEIVER_EMAIL_1'), os.getenv('RECEIVER_EMAIL_2')]
     password = os.getenv('SENDER_PASSWORD')
@@ -190,4 +232,3 @@ def email_sent():
 
 if __name__ == "__main__":
     app.run(debug=True)
-
