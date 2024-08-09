@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Edit Submission</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <style>
+        body {
+            font-size: 80%;
+            background-color: #f8f9fa;
+        }
+        .navbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px;
+            background-color: #343a40;
+            color: white;
+        }
+        .navbar h1 {
+            margin: 0;
+            font-size: 24px;
+        }
+        .navbar h4 {
+            margin: 0;
+            padding-left: 10px;
+            font-size: 14px;
+        }
+        .navbar .logout {
+            background-color: #dc3545;
+            border: none;
+            padding: 5px 10px;
+            color: white;
+            cursor: pointer;
+            border-radius: 5px;
+            font-size: 14px;
+        }
+        .container {
+            width: 100%;
+            max-width: 1200px;
+            margin: 20px auto;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        .form-control, .form-control-file {
+            font-size: 14px;
+        }
+        .btn-primary {
+            background-color: #007bff;
+            border: none;
+            padding: 10px 15px;
+            color: white;
+            cursor: pointer;
+            border-radius: 5px;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+    <div class="navbar">
+        <div>
+            <h1>GOAT</h1>
+            <h4>An Hempire Enterprise Company</h4>
+        </div>
+        <button class="logout" onclick="location.href='{{ url_for('logout') }}'">Logout</button>
+    </div>
+
+    <div class="container mt-5">
+        <h2>Edit Submission</h2>
+        <form action="/edit_submission/{{ submission_id }}" method="POST" enctype="multipart/form-data">
+            <div class="form-group">
+                <label for="company_name">Company Name</label>
+                <input type="text" class="form-control" id="company_name" name="company_name" value="{{ submission.company_name }}">
+            </div>
+            <div class="form-group">
+                <label for="time_in_business">Time in Business</label>
+                <input type="text" class="form-control" id="time_in_business" name="time_in_business" value="{{ submission.time_in_business }}">
+            </div>
+            <div class="form-group">
+                <label for="address_line_1">Address Line 1</label>
+                <input type="text" class="form-control" id="address_line_1" name="address_line_1" value="{{ submission.address_line_1 }}">
+            </div>
+            <div class="form-group">
+                <label for="city">City</label>
+                <input type="text" class="form-control" id="city" name="city" value="{{ submission.city }}">
+            </div>
+            <div class="form-group">
+                <label for="state">State</label>
+                <input type="text" class="form-control" id="state" name="state" value="{{ submission.state }}">
+            </div>
+            <div class="form-group">
+                <label for="zip_code">Zip Code</label>
+                <input type="text" class="form-control" id="zip_code" name="zip_code" value="{{ submission.zip_code }}">
+            </div>
+            <div class="form-group">
+                <label for="company_email">Company Email</label>
+                <input type="email" class="form-control" id="company_email" name="company_email" value="{{ submission.company_email }}">
+            </div>
+            <div class="form-group">
+                <label for="company_phone">Company Phone</label>
+                <input type="text" class="form-control" id="company_phone" name="company_phone" value="{{ submission.company_phone }}">
+            </div>
+            <div class="form-group">
+                <label for="ein">EIN / TAX ID Number</label>
+                <input type="text" class="form-control" id="ein" name="ein" value="{{ submission.ein }}">
+            </div>
+            <div class="form-group">
+                <label for="business_type">Type of Business</label>
+                <input type="text" class="form-control" id="business_type" name="business_type" value="{{ submission.business_type }}">
+            </div>
+            <div class="form-group">
+                <label for="borrower_first_name">Borrower First Name</label>
+                <input type="text" class="form-control" id="borrower_first_name" name="borrower_first_name" value="{{ submission.borrower_first_name }}">
+            </div>
+            <div class="form-group">
+                <label for="borrower_last_name">Borrower Last Name</label>
+                <input type="text" class="form-control" id="borrower_last_name" name="borrower_last_name" value="{{ submission.borrower_last_name }}">
+            </div>
+            <div class="form-group">
+                <label for="borrower_dob">Date of Birth</label>
+                <input type="date" class="form-control" id="borrower_dob" name="borrower_dob" value="{{ submission.borrower_dob }}">
+            </div>
+            <div class="form-group">
+                <label for="borrower_ownership">Percent Ownership</label>
+                <input type="text" class="form-control" id="borrower_ownership" name="borrower_ownership" value="{{ submission.borrower_ownership }}">
+            </div>
+            <div class="form-group">
+                <label for="borrower_ssn">SSN</label>
+                <input type="text" class="form-control" id="borrower_ssn" name="borrower_ssn" value="{{ submission.borrower_ssn }}">
+            </div>
+            <div class="form-group">
+                <label for="borrower_phone">Phone</label>
+                <input type="text" class="form-control" id="borrower_phone" name="borrower_phone" value="{{ submission.borrower_phone }}">
+            </div>
+            <div class="form-group">
+                <label for="borrower_email">Email</label>
+                <input type="email" class="form-control" id="borrower_email" name="borrower_email" value="{{ submission.borrower_email }}">
+            </div>
+            <div class="form-group">
+                <label for="borrower_preferred_contact">Preferred Method of Contact</label>
+                <input type="text" class="form-control" id="borrower_preferred_contact" name="borrower_preferred_contact" value="{{ submission.borrower_preferred_contact }}">
+            </div>
+            <div class="form-group">
+                <label for="borrower_address_line_1">Address Line 1</label>
+                <input type="text" class="form-control" id="borrower_address_line_1" name="borrower_address_line_1" value="{{ submission.borrower_address_line_1 }}">
+            </div>
+            <div class="form-group">
+                <label for="borrower_city">City</label>
+                <input type="text" class="form-control" id="borrower_city" name="borrower_city" value="{{ submission.borrower_city }}">
+            </div>
+            <div class="form-group">
+                <label for="borrower_state">State</label>
+                <input type="text" class="form-control" id="borrower_state" name="borrower_state" value="{{ submission.borrower_state }}">
+            </div>
+            <div class="form-group">
+                <label for="borrower_zip_code">Zip Code</label>
+                <input type="text" class="form-control" id="borrower_zip_code" name="borrower_zip_code" value="{{ submission.borrower_zip_code }}">
+            </div>
+            <div class="form-group">
+                <label for="coapplicant_first_name">Co-Applicant First Name</label>
+                <input type="text" class="form-control" id="coapplicant_first_name" name="coapplicant_first_name" value="{{ submission.coapplicant_first_name }}">
+            </div>
+            <div class="form-group">
+                <label for="coapplicant_last_name">Co-Applicant Last Name</label>
+                <input type="text" class="form-control" id="coapplicant_last_name" name="coapplicant_last_name" value="{{ submission.coapplicant_last_name }}">
+            </div>
+            <div class="form-group">
+                <label for="coapplicant_dob">Co-Applicant Date of Birth</label>
+                <input type="date" class="form-control" id="coapplicant_dob" name="coapplicant_dob" value="{{ submission.coapplicant_dob }}">
+            </div>
+            <div class="form-group">
+                <label for="coapplicant_ownership">Co-Applicant Percent Ownership</label>
+                <input type="text" class="form-control" id="coapplicant_ownership" name="coapplicant_ownership" value="{{ submission.coapplicant_ownership }}">
+            </div>
+            <div class="form-group">
+                <label for="coapplicant_ssn">Co-Applicant SSN</label>
+                <input type="text" class="form-control" id="coapplicant_ssn" name="coapplicant_ssn" value="{{ submission.coapplicant_ssn }}">
+            </div>
+            <div class="form-group">
+                <label for="coapplicant_phone">Co-Applicant Phone</label>
+                <input type="text" class="form-control" id="coapplicant_phone" name="coapplicant_phone" value="{{ submission.coapplicant_phone }}">
+            </div>
+            <div class="form-group">
+                <label for="coapplicant_email">Co-Applicant Email</label>
+                <input type="email" class="form-control" id="coapplicant_email" name="coapplicant_email" value="{{ submission.coapplicant_email }}">
+            </div>
+            <div class="form-group">
+                <label for="coapplicant_address_line_1">Co-Applicant Address Line 1</label>
+                <input type="text" class="form-control" id="coapplicant_address_line_1" name="coapplicant_address_line_1" value="{{ submission.coapplicant_address_line_1 }}">
+            </div>
+            <div class="form-group">
+                <label for="coapplicant_city">Co-Applicant City</label>
+                <input type="text" class="form-control" id="coapplicant_city" name="coapplicant_city" value="{{ submission.coapplicant_city }}">
+            </div>
+            <div class="form-group">
+                <label for="coapplicant_state">Co-Applicant State</label>
+                <input type="text" class="form-control" id="coapplicant_state" name="coapplicant_state" value="{{ submission.coapplicant_state }}">
+            </div>
+            <div class="form-group">
+                <label for="coapplicant_zip_code">Co-Applicant Zip Code</label>
+                <input type="text" class="form-control" id="coapplicant_zip_code" name="coapplicant_zip_code" value="{{ submission.coapplicant_zip_code }}">
+            </div>
+            <div class="form-group">
+                <label for="loan_amount">Loan Amount</label>
+                <input type="text" class="form-control" id="loan_amount" name="loan_amount" value="{{ submission.loan_amount }}">
+            </div>
+            <div class="form-group">
+                <label for="max_down_payment">Max Down Payment</label>
+                <input type="text" class="form-control" id="max_down_payment" name="max_down_payment" value="{{ submission.max_down_payment }}">
+            </div>
+            <div class="form-group">
+                <label for="equipment_seller_info">Equipment & Seller Info</label>
+                <input type="text" class="form-control" id="equipment_seller_info" name="equipment_seller_info" value="{{ submission.equipment_seller_info }}">
+            </div>
+            <div class="form-group">
+                <label for="files">Upload Files</label>
+                <input type="file" class="form-control-file" id="files" name="files" multiple>
+            </div>
+
+            <button type="submit" class="btn btn-primary">Save</button>
+        </form>
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
