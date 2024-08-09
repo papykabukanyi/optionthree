@@ -37,3 +37,16 @@ venv/
 .idea/
 .vscode/
 .ipynb_checkpoints/
+
+# Ignore Python compiled files
+__pycache__/
+*.pyc
+
+# Ignore environment files
+.env
+
+# Ignore uploads directory
+uploads/
+
+# Ignore the API documentation file
+api-documentation.md
