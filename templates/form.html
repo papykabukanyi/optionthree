@@ -149,48 +149,48 @@
                 <div class="input-data">
                     <input type="text" name="company_name" required>
                     <div class="underline"></div>
-                    <label for="">Company Name</label>
+                    <label for="">Company Name*</label>
                 </div>
                 <div class="input-data">
                     <input type="number" name="time_in_business" required>
                     <div class="underline"></div>
-                    <label for="">Time in Business</label>
+                    <label for="">Time in Business*</label>
                 </div>
             </div>
             <div class="form-row">
                 <div class="input-data">
                     <input type="text" name="address_line_1" required>
                     <div class="underline"></div>
-                    <label for="">Address Line 1</label>
+                    <label for="">Address Line 1*</label>
                 </div>
             </div>
             <div class="form-row">
                 <div class="input-data">
                     <input type="text" name="city" required>
                     <div class="underline"></div>
-                    <label for="">City</label>
+                    <label for="">City*</label>
                 </div>
                 <div class="input-data">
                     <input type="text" name="state" required>
                     <div class="underline"></div>
-                    <label for="">State</label>
+                    <label for="">State*</label>
                 </div>
                 <div class="input-data">
                     <input type="text" name="zip_code" required>
                     <div class="underline"></div>
-                    <label for="">Zip Code</label>
+                    <label for="">Zip Code*</label>
                 </div>
             </div>
             <div class="form-row">
                 <div class="input-data">
                     <input type="text" name="company_email" required>
                     <div class="underline"></div>
-                    <label for="">Company Email</label>
+                    <label for="">Company Email*</label>
                 </div>
                 <div class="input-data">
                     <input type="tel" name="company_phone" required>
                     <div class="underline"></div>
-                    <label for="">Company Phone Number</label>
+                    <label for="">Company Phone Number*</label>
                 </div>
             </div>
 
@@ -198,12 +198,19 @@
                 <div class="input-data">
                     <input type="text" name="ein" required>
                     <div class="underline"></div>
-                    <label for="">EIN / TAX ID Number</label>
+                    <label for="">EIN / TAX ID Number*</label>
                 </div>
+
                 <div class="input-data">
-                    <input type="text" name="business_type" required>
+                    <select name="business_type" required>
+                        <option value="">Select Type of Business*</option>
+                        <option value="Sole Proprietorship">Sole Proprietorship</option>
+                        <option value="Corporation">Corporation</option>
+                        <option value="LLC">LLC</option>
+                        <option value="Partnership">Partnership</option>
+                    </select>
                     <div class="underline"></div>
-                    <label for="">Type of Business</label>
+                    <!-- <label for="">Type of Business/Entity</label> -->
                 </div>
             </div>
             <br>
@@ -212,17 +219,17 @@
                 <div class="input-data">
                     <input type="text" name="borrower_first_name" required>
                     <div class="underline"></div>
-                    <label for="">First Name</label>
+                    <label for="">First Name*</label>
                 </div>
                 <div class="input-data">
                     <input type="text" name="borrower_last_name" required>
                     <div class="underline"></div>
-                    <label for="">Last Name</label>
+                    <label for="">Last Name*</label>
                 </div>
                 <div class="input-data">
                     <input type="date" name="borrower_dob" required>
                     <div class="underline"></div>
-                    <label for="">Date of Birth</label>
+                    <label for="">Date of Birth*</label>
                 </div>
             </div>
 
@@ -230,56 +237,57 @@
                 <div class="input-data">
                     <input type="text" name="borrower_ownership" required>
                     <div class="underline"></div>
-                    <label for="">Percent Ownership</label>
+                    <label for="">Percent Ownership*</label>
                 </div>
                 <div class="input-data">
                     <input type="text" name="borrower_ssn" required>
                     <div class="underline"></div>
-                    <label for="">Social Security Number</label>
+                    <label for="">Social Security Number*</label>
                 </div>
             </div>
             <div class="form-row">
                 <div class="input-data">
                     <input type="tel" name="borrower_phone" required>
                     <div class="underline"></div>
-                    <label for="">Cell Phone</label>
+                    <label for="">Cell Phone*</label>
                 </div>
                 <div class="input-data">
                     <input type="text" name="borrower_email" required>
                     <div class="underline"></div>
-                    <label for="">Email Address</label>
+                    <label for="">Email Address*</label>
                 </div>
                 <div class="input-data">
                     <select name="borrower_preferred_contact" required>
+                        <option value="">Select Preferred Method of Contact*</option>
                         <option value="email">Email</option>
                         <option value="phone">Phone</option>
                     </select>
                     <div class="underline"></div>
-                    <label for="">Preferred Method of Contact</label>
+                    <!-- <label for="">Preferred Method of Contact</label> -->
                 </div>
             </div>
             <div class="form-row">
                 <div class="input-data">
                     <input type="text" name="borrower_address_line_1" required>
                     <div class="underline"></div>
-                    <label for="">Address Line 1</label>
+                    <label for="">Address Line 1*</label>
                 </div>
             </div>
             <div class="form-row">
                 <div class="input-data">
                     <input type="text" name="borrower_city" required>
                     <div class="underline"></div>
-                    <label for="">City</label>
+                    <label for="">City*</label>
                 </div>
                 <div class="input-data">
                     <input type="text" name="borrower_state" required>
                     <div class="underline"></div>
-                    <label for="">State</label>
+                    <label for="">State*</label>
                 </div>
                 <div class="input-data">
                     <input type="text" name="borrower_zip_code" required>
                     <div class="underline"></div>
-                    <label for="">Zip Code</label>
+                    <label for="">Zip Code*</label>
                 </div>
             </div>
 
@@ -329,11 +337,12 @@
                 </div>
                 <div class="input-data">
                     <select name="coapplicant_preferred_contact">
+                        <option value="">Select Preferred Method of Contact</option>
                         <option value="email">Email</option>
                         <option value="phone">Phone</option>
                     </select>
                     <div class="underline"></div>
-                    <label for="">Preferred Method of Contact</label>
+                    <!-- <label for="">Preferred Method of Contact</label> -->
                 </div>
             </div>
             <div class="form-row">
@@ -367,25 +376,25 @@
                 <div class="input-data">
                     <input type="text" name="loan_amount">
                     <div class="underline"></div>
-                    <label for="">Amount of Equipment</label>
+                    <label for="">Amount of Equipment*</label>
                 </div>
             </div>
             <div class="form-row">
                 <div class="input-data">
                     <input type="text" name="max_down_payment">
                     <div class="underline"></div>
-                    <label for="">Max Down Payments</label>
+                    <label for="">Max Down Payments*</label>
                 </div>
             </div>
             <div class="form-row">
                 <div class="input-data">
                     <input type="text" name="equipment_seller_info">
                     <div class="underline"></div>
-                    <label for="">Equipment & Seller Info</label>
+                    <label for="">Equipment & Seller Info*</label>
                 </div>
             </div>
             <br>
-            <h4>Upload Documents</h4>
+            <h4>Upload Documents* (PDF)</h4>
             <div id="file-upload-container">
                 <div class="file-upload">
                     <label for="files1">Select Files</label>

@@ -309,7 +309,7 @@ def create_pdf(data, files, submission_time, browser, ip_address, unique_id, loc
     pdf.cell(0, 5, txt=f"Company Email: {data.get('company_email', '')}", ln=True)
     pdf.cell(0, 5, txt=f"Company Phone: {data.get('company_phone', '')}", ln=True)
     pdf.cell(0, 5, txt=f"EIN / TAX ID Number: {data.get('ein', '')}", ln=True)
-    pdf.cell(0, 5, txt=f"Type of Business: {data.get('business_type', '')}", ln=True)
+    pdf.cell(0, 5, txt=f"Type of Business: {data.get('business_type', '')}", ln=True)  # Include this line
     pdf.ln(2)
     pdf.set_font("Arial", 'B', 14)
     pdf.cell(0, 10, txt="Borrower Information", ln=True)
@@ -413,7 +413,7 @@ def submit_form():
         borrower_email = form_data.get('borrower_email')
         borrower_name = f"{form_data.get('borrower_first_name', '')} {form_data.get('borrower_last_name', '')}"
 
-        email_template = render_template('borrower_email_template.html', borrower_name=borrower_name, app_id=app_id)
+        email_template = render_template('borrower_email_template.html', borrower_name=borrower_name, app_id=app_id, business_type=form_data.get('business_type', ''))
 
         send_borrower_email(borrower_email, "Application Submitted", email_template)
 
@@ -561,6 +561,7 @@ def logout():
     flash('Logged out successfully!')
     return redirect(url_for('login'))
 
+@app.route('/dashboard.html')
 @app.route('/dashboard')
 def dashboard():
     if 'user_id' not in session:
@@ -576,7 +577,12 @@ def api_submissions():
 def api_submission(submission_id):
     submission = get_submission_by_id(submission_id)
     if submission:
-        return jsonify({'id': submission[0], 'app_id': submission[1], 'data': submission[2], 'submission_time': submission[3]})
+        data = json.loads(submission[2])
+        return jsonify({'id': submission[0], 
+                        'app_id': submission[1], 
+                        'business_type': data.get('business_type'),  # Include this
+                        'data': submission[2], 
+                        'submission_time': submission[3]})
     else:
         return jsonify({'error': 'Submission not found'}), 404
 
