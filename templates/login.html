@@ -1,12 +1,19 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login</title>
+    <link rel="apple-touch-icon" sizes="180x180" href="/static/assets/img/favicon_io/apple-touch-icon.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="/static/assets/img/favicon_io/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="/static/assets/img/favicon_io/favicon-16x16.png">
+    <link rel="manifest" href="/static/assets/img/favicon_io/site.webmanifest">
+    <title>GOAT Login</title>
     <link href="https://fonts.googleapis.com/css2?family=Lexend:wght@400;600&display=swap" rel="stylesheet">
     <style>
-        *, *:after, *:before {
+        *,
+        *:after,
+        *:before {
             box-sizing: border-box;
             font-weight: normal;
             margin: 0;
@@ -14,6 +21,7 @@
             font-family: "Lexend", sans-serif;
             padding: 0;
         }
+
         body {
             background: black;
             font-family: "Lexend", sans-serif;
@@ -25,6 +33,7 @@
             align-items: center;
             flex-direction: column;
         }
+
         .container {
             display: flex;
             justify-content: center;
@@ -33,17 +42,21 @@
             position: relative;
             z-index: 1;
         }
+
         .header {
             text-align: center;
             color: #FFFFFF;
         }
+
         .login {
             width: 300px;
             margin: 20px auto;
         }
+
         .login form {
             width: 100%;
         }
+
         input {
             background: rgba(0, 0, 0, 0.3);
             border: 1px solid rgba(0, 0, 0, 0.3);
@@ -57,6 +70,7 @@
             text-shadow: 1px 1px 1px rgba(0, 0, 0, 0.3);
             width: 100%;
         }
+
         button {
             background: linear-gradient(to bottom, #009EFF 0px, #0075BC 100%);
             border: 1px solid rgba(0, 0, 0, 0.3);
@@ -71,6 +85,7 @@
             text-shadow: 0 1px rgba(0, 0, 0, 0.3);
             width: 100%;
         }
+
         canvas {
             position: absolute;
             top: 0;
@@ -79,6 +94,7 @@
             height: 100%;
             z-index: 0;
         }
+
         .footer {
             margin-top: auto;
             text-align: center;
@@ -86,6 +102,7 @@
         }
     </style>
 </head>
+
 <body>
     <canvas></canvas>
     <div class="container">
@@ -100,7 +117,8 @@
                 <button type="submit" class="btn btn-primary btn-block btn-large">Login</button>
             </form>
             <div class="text-center mt-3">
-                <a href="{{ url_for('signup') }}" style="color: #FFFFFF; text-decoration: underline;">Don't have an account? Sign up</a>
+                <a href="{{ url_for('signup') }}" style="color: #FFFFFF; text-decoration: underline;">Don't have an
+                    account? Sign up</a>
             </div>
         </div>
         <div class="footer">
@@ -109,4 +127,5 @@
     </div>
     <script src="/static/assets/js/metaballs.js"></script>
 </body>
+
 </html>

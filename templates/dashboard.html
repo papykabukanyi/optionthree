@@ -1,9 +1,14 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dashboard</title>
+    <link rel="apple-touch-icon" sizes="180x180" href="/static/assets/img/favicon_io/apple-touch-icon.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="/static/assets/img/favicon_io/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="/static/assets/img/favicon_io/favicon-16x16.png">
+    <link rel="manifest" href="/static/assets/img/favicon_io/site.webmanifest">
+    <title>GOAT Dashboard</title>
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
     <link rel="stylesheet" href="https://cdn.datatables.net/1.11.5/css/jquery.dataTables.min.css">
     <style>
@@ -11,44 +16,52 @@
             font-size: 80%;
             background-color: #f8f9fa;
         }
+
         .navbar {
             display: flex;
             justify-content: space-between;
             align-items: center;
             padding: 10px;
             background-color: #343a40;
-            color: white;
+            color: rgb(199, 199, 199);
         }
+
         .navbar h1 {
             margin: 0;
             font-size: 24px;
         }
+
         .navbar h4 {
             margin: 0;
             padding-left: 10px;
             font-size: 14px;
         }
+
         .navbar .logout {
-            background-color: #dc3545;
+            background-color: #727272;
             border: none;
             padding: 5px 10px;
-            color: white;
+            color: rgb(225, 225, 225);
             cursor: pointer;
             border-radius: 5px;
             font-size: 14px;
         }
+
         .container {
             width: 100%;
             max-width: 1200px;
             margin: 20px auto;
         }
+
         table.dataTable th,
         table.dataTable td {
             white-space: nowrap;
-            text-align: left; /* Align text to the left */
+            text-align: left;
+            /* Align text to the left */
         }
+
         .btn-view-details {
-            background-color: #007bff;
+            background-color: #626262;
             border: none;
             padding: 5px 10px;
             color: white;
@@ -56,6 +69,7 @@
             border-radius: 5px;
             font-size: 14px;
         }
+
         .btn-delete {
             background-color: #dc3545;
             border: none;
@@ -66,14 +80,17 @@
             font-size: 14px;
             margin-right: 5px;
         }
+
         @media screen and (max-width: 767px) {
             .container {
                 padding: 0 10px;
             }
+
             table.dataTable {
                 width: 100%;
                 table-layout: fixed;
             }
+
             table.dataTable th,
             table.dataTable td {
                 word-wrap: break-word;
@@ -81,6 +98,7 @@
         }
     </style>
 </head>
+
 <body>
     <div class="navbar">
         <div>
@@ -161,7 +179,7 @@
             `;
         }
 
-        $(document).ready(function() {
+        $(document).ready(function () {
             const table = $('#submissionsTable').DataTable({
                 responsive: false, // Disable responsive behavior
                 columnDefs: [],
@@ -203,7 +221,7 @@
                 }
             }
 
-            $('#submissionsTable tbody').on('click', 'button.btn-view-details', async function() {
+            $('#submissionsTable tbody').on('click', 'button.btn-view-details', async function () {
                 const submissionId = $(this).data('id');
                 const submission = await fetchSubmissionDetails(submissionId);
                 const details = JSON.parse(submission.data);
@@ -219,7 +237,7 @@
                 }
             });
 
-            $('#submissionsTable tbody').on('click', 'button.btn-delete', function() {
+            $('#submissionsTable tbody').on('click', 'button.btn-delete', function () {
                 const submissionId = $(this).data('id');
                 if (confirm('Are you sure you want to delete this submission?')) {
                     deleteSubmission(submissionId);
@@ -230,4 +248,5 @@
         });
     </script>
 </body>
+
 </html>
