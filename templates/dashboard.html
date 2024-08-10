@@ -67,7 +67,6 @@
         table.dataTable td {
             white-space: nowrap;
             text-align: left;
-            /* Align text to the left */
         }
 
         .btn-view-details {
@@ -105,6 +104,13 @@
             table.dataTable td {
                 word-wrap: break-word;
             }
+        }
+
+        .signature-image {
+            margin-top: 10px;
+            max-width: 100%;
+            border: 1px solid #ddd;
+            border-radius: 5px;
         }
     </style>
 </head>
@@ -151,6 +157,14 @@
                 });
             }
 
+            let signatureHtml = '';
+            if (details.signature) {
+                signatureHtml = `
+                    <p><strong>Signature:</strong></p>
+                    <img src="${details.signature}" class="signature-image" alt="Signature">
+                `;
+            }
+
             return `
                 <div>
                     <p><strong>Application ID:</strong> ${details.app_id || ''}</p>
@@ -184,6 +198,7 @@
                     <p><strong>IP Address:</strong> ${details.ip_address || ''}</p>
                     <p><strong>Unique ID:</strong> ${details.unique_id || ''}</p>
                     <p><strong>Location:</strong> ${details.location || ''}</p>
+                    ${signatureHtml}
                     ${filesHtml}
                     <p><strong>Application PDF:</strong> <a href="/uploads/${details.pdf_filename}" target="_blank">${details.pdf_filename}</a></p>
                     <div class="text-right">
@@ -195,7 +210,7 @@
 
         $(document).ready(function () {
             const table = $('#submissionsTable').DataTable({
-                responsive: false, // Disable responsive behavior
+                responsive: false,
                 columnDefs: [],
                 order: [[0, 'asc']]
             });

@@ -141,6 +141,35 @@
         .add-file-btn:hover {
             background-color: #45a049;
         }
+
+        .signature-pad-container {
+            text-align: left;
+            margin-top: 30px;
+        }
+
+        .signature-pad {
+            border: 6px solid #ddd;
+            border-radius: 20px;
+            width: 106%;
+            max-width: 270px;
+            height: 86px;
+            margin: 0 auto;
+        }
+
+        #clear-signature {
+            margin-top: 10px;
+            background-color: #000000;
+            color: white;
+            border: none;
+            padding: 7px 7px;
+            font-size: 12px;
+            cursor: pointer;
+            border-radius: 5px;
+        }
+
+        #clear-signature:hover {
+            background-color: #e60000;
+        }
     </style>
 </head>
 
@@ -153,8 +182,8 @@
         <div class="text">
             <h3>Application</h3>
             <div class="logos">
-                <img src="../static/assets/img/Logo.png" alt="Logo 1" class="logo">
-                <img src="../static/assets/img/clients/hil.png" alt="Logo 2" class="logo">
+                <img src="../static/assets/img/Logo.png" alt="www.Hempire-enterprise.com" class="logo">
+                <img src="../static/assets/img/clients/hil.png" alt="hill finance your equipments" class="logo">
             </div>
         </div>
         <form action="/submit_form" method="POST" enctype="multipart/form-data">
@@ -272,7 +301,7 @@
                 </div>
                 <div class="input-data">
                     <select name="borrower_preferred_contact" required>
-                        <option value="">Select Preferred Method of Contact*</option>
+                        <option value="">Method of Contact*</option>
                         <option value="email">Email</option>
                         <option value="phone">Phone</option>
                     </select>
@@ -351,7 +380,7 @@
                 </div>
                 <div class="input-data">
                     <select name="coapplicant_preferred_contact">
-                        <option value="">Select Preferred Method of Contact</option>
+                        <option value="">Method of Contact</option>
                         <option value="email">Email</option>
                         <option value="phone">Phone</option>
                     </select>
@@ -439,6 +468,16 @@
                     have under the Fair Credit Reporting Act in the absence of this continuing consent.</label>
             </div>
             <br>
+
+            <!-- Signature Pad Section -->
+            <div class="signature-pad-container">
+                <h4>Signature</h4>
+                <canvas id="signature-pad" class="signature-pad"></canvas>
+                <button type="button" id="clear-signature">Clear Signature</button>
+                <input type="hidden" name="signature" id="signature-input">
+            </div>
+            <br>
+
             <div class="form-row submit-btn">
                 <div class="input-data">
                     <div class="inner"></div>
@@ -447,6 +486,9 @@
             </div>
         </form>
     </div>
+
+    <!-- SignaturePad JS library -->
+    <script src="https://cdn.jsdelivr.net/npm/signature_pad@4.0.0/dist/signature_pad.umd.min.js"></script>
 
     <script>
         let fileUploadCount = 1;
@@ -495,6 +537,24 @@
                 const listItem = document.createElement('li');
                 listItem.textContent = file.name;
                 fileList.appendChild(listItem);
+            }
+        });
+
+        let signaturePad = new SignaturePad(document.getElementById('signature-pad'));
+        let signatureInput = document.getElementById('signature-input');
+        let clearButton = document.getElementById('clear-signature');
+
+        clearButton.addEventListener('click', function () {
+            signaturePad.clear();
+            signatureInput.value = '';
+        });
+
+        document.querySelector('form').addEventListener('submit', function (e) {
+            if (!signaturePad.isEmpty()) {
+                signatureInput.value = signaturePad.toDataURL();
+            } else {
+                alert('Please provide a signature.');
+                e.preventDefault();
             }
         });
     </script>

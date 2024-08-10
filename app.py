@@ -240,6 +240,7 @@
 import os
 import uuid
 import tempfile
+import base64  # Import base64 to handle the signature decoding
 from datetime import datetime
 from flask import Flask, request, render_template, redirect, url_for, flash, session, jsonify, send_from_directory, render_template_string
 from werkzeug.security import generate_password_hash, check_password_hash
@@ -309,7 +310,7 @@ def create_pdf(data, files, submission_time, browser, ip_address, unique_id, loc
     pdf.cell(0, 5, txt=f"Company Email: {data.get('company_email', '')}", ln=True)
     pdf.cell(0, 5, txt=f"Company Phone: {data.get('company_phone', '')}", ln=True)
     pdf.cell(0, 5, txt=f"EIN / TAX ID Number: {data.get('ein', '')}", ln=True)
-    pdf.cell(0, 5, txt=f"Type of Business: {data.get('business_type', '')}", ln=True)  # Include this line
+    pdf.cell(0, 5, txt=f"Type of Business: {data.get('business_type', '')}", ln=True)
     pdf.ln(2)
     pdf.set_font("Arial", 'B', 14)
     pdf.cell(0, 10, txt="Borrower Information", ln=True)
@@ -352,7 +353,16 @@ def create_pdf(data, files, submission_time, browser, ip_address, unique_id, loc
     pdf.cell(0, 5, txt=f"Unique ID: {unique_id}", ln=True)
     pdf.cell(0, 5, txt=f"Location: {location}", ln=True)
     pdf.cell(0, 5, txt=f"Application ID: {app_id}", ln=True)
-    pdf.ln(2)
+
+    # Decode and save signature
+    signature_data = data.get('signature', '').split(',')[1]
+    signature_path = os.path.join(app.config['UPLOAD_FOLDER'], f"{app_id}_signature.png")
+    with open(signature_path, "wb") as fh:
+        fh.write(base64.b64decode(signature_data))
+    
+    pdf.image(signature_path, 10, pdf.get_y() + 10, 60)  # Adjust as needed
+    pdf.ln(20)
+    
     pdf.set_font("Arial", 'B', 14)
     pdf.cell(0, 10, txt="Attached Files", ln=True)
     pdf.set_font("Arial", size=10)
@@ -580,7 +590,8 @@ def api_submission(submission_id):
         data = json.loads(submission[2])
         return jsonify({'id': submission[0], 
                         'app_id': submission[1], 
-                        'business_type': data.get('business_type'),  # Include this
+                        'business_type': data.get('business_type'),  
+                        'signature': data.get('signature'),  # Include the signature data
                         'data': submission[2], 
                         'submission_time': submission[3]})
     else:
