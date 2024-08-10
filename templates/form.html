@@ -168,7 +168,7 @@
         }
 
         #clear-signature:hover {
-            background-color: #5a5959;
+            background-color: #e60000;
         }
     </style>
 </head>
@@ -554,13 +554,25 @@
             signatureInput.value = '';
         });
 
+        // Prevent double submission
+        let isSubmitting = false;
+
+        // Handle form submission
         document.querySelector('form').addEventListener('submit', function (e) {
+            if (isSubmitting) {
+                e.preventDefault();
+                return false;
+            }
+
             if (!signaturePad.isEmpty()) {
                 signatureInput.value = signaturePad.toDataURL();
             } else {
                 alert('Please provide a signature.');
                 e.preventDefault();
+                return false;
             }
+
+            isSubmitting = true;  // Set submitting flag to prevent multiple submissions
         });
     </script>
 </body>
