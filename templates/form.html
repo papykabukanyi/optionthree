@@ -168,7 +168,7 @@
         }
 
         #clear-signature:hover {
-            background-color: #e60000;
+            background-color: #5a5959;
         }
     </style>
 </head>
@@ -540,7 +540,12 @@
             }
         });
 
-        let signaturePad = new SignaturePad(document.getElementById('signature-pad'));
+        let signaturePad = new SignaturePad(document.getElementById('signature-pad'), {
+            minWidth: 1,
+            maxWidth: 3,
+            penColor: "black",
+            velocityFilterWeight: 0.7
+        });
         let signatureInput = document.getElementById('signature-input');
         let clearButton = document.getElementById('clear-signature');
 
