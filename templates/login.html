@@ -1,12 +1,29 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
+    <!-- Google Tag Manager -->
+    <script>(function (w, d, s, l, i) {
+            w[l] = w[l] || []; w[l].push({
+                'gtm.start':
+                    new Date().getTime(), event: 'gtm.js'
+            }); var f = d.getElementsByTagName(s)[0],
+                j = d.createElement(s), dl = l != 'dataLayer' ? '&l=' + l : ''; j.async = true; j.src =
+                    'https://www.googletagmanager.com/gtm.js?id=' + i + dl; f.parentNode.insertBefore(j, f);
+        })(window, document, 'script', 'dataLayer', 'GTM-MJXPS9NH');</script>
+    <!-- End Google Tag Manager -->
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login</title>
+    <link rel="apple-touch-icon" sizes="180x180" href="/static/assets/img/favicon_io/apple-touch-icon.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="/static/assets/img/favicon_io/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="/static/assets/img/favicon_io/favicon-16x16.png">
+    <link rel="manifest" href="/static/assets/img/favicon_io/site.webmanifest">
+    <title>GOAT Login</title>
     <link href="https://fonts.googleapis.com/css2?family=Lexend:wght@400;600&display=swap" rel="stylesheet">
     <style>
-        *, *:after, *:before {
+        *,
+        *:after,
+        *:before {
             box-sizing: border-box;
             font-weight: normal;
             margin: 0;
@@ -14,6 +31,7 @@
             font-family: "Lexend", sans-serif;
             padding: 0;
         }
+
         body {
             background: black;
             font-family: "Lexend", sans-serif;
@@ -25,6 +43,7 @@
             align-items: center;
             flex-direction: column;
         }
+
         .container {
             display: flex;
             justify-content: center;
@@ -33,17 +52,21 @@
             position: relative;
             z-index: 1;
         }
+
         .header {
             text-align: center;
             color: #FFFFFF;
         }
+
         .login {
             width: 300px;
             margin: 20px auto;
         }
+
         .login form {
             width: 100%;
         }
+
         input {
             background: rgba(0, 0, 0, 0.3);
             border: 1px solid rgba(0, 0, 0, 0.3);
@@ -57,6 +80,7 @@
             text-shadow: 1px 1px 1px rgba(0, 0, 0, 0.3);
             width: 100%;
         }
+
         button {
             background: linear-gradient(to bottom, #009EFF 0px, #0075BC 100%);
             border: 1px solid rgba(0, 0, 0, 0.3);
@@ -71,6 +95,7 @@
             text-shadow: 0 1px rgba(0, 0, 0, 0.3);
             width: 100%;
         }
+
         canvas {
             position: absolute;
             top: 0;
@@ -79,6 +104,7 @@
             height: 100%;
             z-index: 0;
         }
+
         .footer {
             margin-top: auto;
             text-align: center;
@@ -86,12 +112,17 @@
         }
     </style>
 </head>
+
 <body>
+    <!-- Google Tag Manager (noscript) -->
+    <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-MJXPS9NH" height="0" width="0"
+            style="display:none;visibility:hidden"></iframe></noscript>
+    <!-- End Google Tag Manager (noscript) -->
     <canvas></canvas>
     <div class="container">
         <div class="header">
             <h1>GOAT</h1>
-            <h4>Managements System</h4>
+            <h4>Management System</h4>
         </div>
         <div class="login">
             <form action="{{ url_for('login') }}" method="POST">
@@ -100,13 +131,15 @@
                 <button type="submit" class="btn btn-primary btn-block btn-large">Login</button>
             </form>
             <div class="text-center mt-3">
-                <a href="{{ url_for('signup') }}" style="color: #FFFFFF; text-decoration: underline;">Don't have an account? Sign up</a>
+                <a href="{{ url_for('signup') }}" style="color: #FFFFFF; text-decoration: underline;">Don't have an
+                    account? Sign up</a>
             </div>
         </div>
         <div class="footer">
-            <h4>A Hempire Enterprise Company</h4>
+            <h4>An Hempire Enterprise Company</h4>
         </div>
     </div>
     <script src="/static/assets/js/metaballs.js"></script>
 </body>
+
 </html>

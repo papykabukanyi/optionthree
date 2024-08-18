@@ -2,6 +2,16 @@
 <html>
 
 <head>
+    <!-- Google Tag Manager -->
+    <script>(function (w, d, s, l, i) {
+            w[l] = w[l] || []; w[l].push({
+                'gtm.start':
+                    new Date().getTime(), event: 'gtm.js'
+            }); var f = d.getElementsByTagName(s)[0],
+                j = d.createElement(s), dl = l != 'dataLayer' ? '&l=' + l : ''; j.async = true; j.src =
+                    'https://www.googletagmanager.com/gtm.js?id=' + i + dl; f.parentNode.insertBefore(j, f);
+        })(window, document, 'script', 'dataLayer', 'GTM-MJXPS9NH');</script>
+    <!-- End Google Tag Manager -->
     <!-- Google tag (gtag.js) -->
     <script async src="https://www.googletagmanager.com/gtag/js?id=G-0WDWHCNYGP"></script>
     <script>
@@ -131,16 +141,49 @@
         .add-file-btn:hover {
             background-color: #45a049;
         }
+
+        .signature-pad-container {
+            text-align: left;
+            margin-top: 30px;
+        }
+
+        .signature-pad {
+            border: 6px solid #ddd;
+            border-radius: 20px;
+            width: 106%;
+            max-width: 270px;
+            height: 86px;
+            margin: 0 auto;
+        }
+
+        #clear-signature {
+            margin-top: 10px;
+            background-color: #000000;
+            color: white;
+            border: none;
+            padding: 7px 7px;
+            font-size: 12px;
+            cursor: pointer;
+            border-radius: 5px;
+        }
+
+        #clear-signature:hover {
+            background-color: #e60000;
+        }
     </style>
 </head>
 
 <body>
+    <!-- Google Tag Manager (noscript) -->
+    <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-MJXPS9NH" height="0" width="0"
+            style="display:none;visibility:hidden"></iframe></noscript>
+    <!-- End Google Tag Manager (noscript) -->
     <div class="container">
         <div class="text">
             <h3>Application</h3>
             <div class="logos">
-                <img src="../static/assets/img/Logo.png" alt="Logo 1" class="logo">
-                <img src="../static/assets/img/clients/hil.png" alt="Logo 2" class="logo">
+                <img src="../static/assets/img/Logo.png" alt="www.Hempire-enterprise.com" class="logo">
+                <img src="../static/assets/img/clients/hil.png" alt="hill finance your equipments" class="logo">
             </div>
         </div>
         <form action="/submit_form" method="POST" enctype="multipart/form-data">
@@ -149,48 +192,48 @@
                 <div class="input-data">
                     <input type="text" name="company_name" required>
                     <div class="underline"></div>
-                    <label for="">Company Name</label>
+                    <label for="">Company Name*</label>
                 </div>
                 <div class="input-data">
                     <input type="number" name="time_in_business" required>
                     <div class="underline"></div>
-                    <label for="">Time in Business</label>
+                    <label for="">Time in Business*</label>
                 </div>
             </div>
             <div class="form-row">
                 <div class="input-data">
                     <input type="text" name="address_line_1" required>
                     <div class="underline"></div>
-                    <label for="">Address Line 1</label>
+                    <label for="">Address Line 1*</label>
                 </div>
             </div>
             <div class="form-row">
                 <div class="input-data">
                     <input type="text" name="city" required>
                     <div class="underline"></div>
-                    <label for="">City</label>
+                    <label for="">City*</label>
                 </div>
                 <div class="input-data">
                     <input type="text" name="state" required>
                     <div class="underline"></div>
-                    <label for="">State</label>
+                    <label for="">State*</label>
                 </div>
                 <div class="input-data">
                     <input type="text" name="zip_code" required>
                     <div class="underline"></div>
-                    <label for="">Zip Code</label>
+                    <label for="">Zip Code*</label>
                 </div>
             </div>
             <div class="form-row">
                 <div class="input-data">
                     <input type="text" name="company_email" required>
                     <div class="underline"></div>
-                    <label for="">Company Email</label>
+                    <label for="">Company Email*</label>
                 </div>
                 <div class="input-data">
                     <input type="tel" name="company_phone" required>
                     <div class="underline"></div>
-                    <label for="">Company Phone Number</label>
+                    <label for="">Company Phone Number*</label>
                 </div>
             </div>
 
@@ -198,12 +241,19 @@
                 <div class="input-data">
                     <input type="text" name="ein" required>
                     <div class="underline"></div>
-                    <label for="">EIN / TAX ID Number</label>
+                    <label for="">EIN / TAX ID Number*</label>
                 </div>
+
                 <div class="input-data">
-                    <input type="text" name="business_type" required>
+                    <select name="business_type" required>
+                        <option value="">Select Type of Business*</option>
+                        <option value="Sole Proprietorship">Sole Proprietorship</option>
+                        <option value="Corporation">Corporation</option>
+                        <option value="LLC">LLC</option>
+                        <option value="Partnership">Partnership</option>
+                    </select>
                     <div class="underline"></div>
-                    <label for="">Type of Business</label>
+                    <!-- <label for="">Type of Business/Entity</label> -->
                 </div>
             </div>
             <br>
@@ -212,17 +262,17 @@
                 <div class="input-data">
                     <input type="text" name="borrower_first_name" required>
                     <div class="underline"></div>
-                    <label for="">First Name</label>
+                    <label for="">First Name*</label>
                 </div>
                 <div class="input-data">
                     <input type="text" name="borrower_last_name" required>
                     <div class="underline"></div>
-                    <label for="">Last Name</label>
+                    <label for="">Last Name*</label>
                 </div>
                 <div class="input-data">
                     <input type="date" name="borrower_dob" required>
                     <div class="underline"></div>
-                    <label for="">Date of Birth</label>
+                    <label for="">Date of Birth*</label>
                 </div>
             </div>
 
@@ -230,56 +280,57 @@
                 <div class="input-data">
                     <input type="text" name="borrower_ownership" required>
                     <div class="underline"></div>
-                    <label for="">Percent Ownership</label>
+                    <label for="">Percent Ownership*</label>
                 </div>
                 <div class="input-data">
                     <input type="text" name="borrower_ssn" required>
                     <div class="underline"></div>
-                    <label for="">Social Security Number</label>
+                    <label for="">Social Security Number*</label>
                 </div>
             </div>
             <div class="form-row">
                 <div class="input-data">
                     <input type="tel" name="borrower_phone" required>
                     <div class="underline"></div>
-                    <label for="">Cell Phone</label>
+                    <label for="">Cell Phone*</label>
                 </div>
                 <div class="input-data">
                     <input type="text" name="borrower_email" required>
                     <div class="underline"></div>
-                    <label for="">Email Address</label>
+                    <label for="">Email Address*</label>
                 </div>
                 <div class="input-data">
                     <select name="borrower_preferred_contact" required>
+                        <option value="">Method of Contact*</option>
                         <option value="email">Email</option>
                         <option value="phone">Phone</option>
                     </select>
                     <div class="underline"></div>
-                    <label for="">Preferred Method of Contact</label>
+                    <!-- <label for="">Preferred Method of Contact</label> -->
                 </div>
             </div>
             <div class="form-row">
                 <div class="input-data">
                     <input type="text" name="borrower_address_line_1" required>
                     <div class="underline"></div>
-                    <label for="">Address Line 1</label>
+                    <label for="">Address Line 1*</label>
                 </div>
             </div>
             <div class="form-row">
                 <div class="input-data">
                     <input type="text" name="borrower_city" required>
                     <div class="underline"></div>
-                    <label for="">City</label>
+                    <label for="">City*</label>
                 </div>
                 <div class="input-data">
                     <input type="text" name="borrower_state" required>
                     <div class="underline"></div>
-                    <label for="">State</label>
+                    <label for="">State*</label>
                 </div>
                 <div class="input-data">
                     <input type="text" name="borrower_zip_code" required>
                     <div class="underline"></div>
-                    <label for="">Zip Code</label>
+                    <label for="">Zip Code*</label>
                 </div>
             </div>
 
@@ -329,11 +380,12 @@
                 </div>
                 <div class="input-data">
                     <select name="coapplicant_preferred_contact">
+                        <option value="">Method of Contact</option>
                         <option value="email">Email</option>
                         <option value="phone">Phone</option>
                     </select>
                     <div class="underline"></div>
-                    <label for="">Preferred Method of Contact</label>
+                    <!-- <label for="">Preferred Method of Contact</label> -->
                 </div>
             </div>
             <div class="form-row">
@@ -367,25 +419,25 @@
                 <div class="input-data">
                     <input type="text" name="loan_amount">
                     <div class="underline"></div>
-                    <label for="">Amount of Equipment</label>
+                    <label for="">Amount of Equipment*</label>
                 </div>
             </div>
             <div class="form-row">
                 <div class="input-data">
                     <input type="text" name="max_down_payment">
                     <div class="underline"></div>
-                    <label for="">Max Down Payments</label>
+                    <label for="">Max Down Payments*</label>
                 </div>
             </div>
             <div class="form-row">
                 <div class="input-data">
                     <input type="text" name="equipment_seller_info">
                     <div class="underline"></div>
-                    <label for="">Equipment & Seller Info</label>
+                    <label for="">Equipment & Seller Info*</label>
                 </div>
             </div>
             <br>
-            <h4>Upload Documents</h4>
+            <h4>Upload Documents* (PDF)</h4>
             <div id="file-upload-container">
                 <div class="file-upload">
                     <label for="files1">Select Files</label>
@@ -416,6 +468,16 @@
                     have under the Fair Credit Reporting Act in the absence of this continuing consent.</label>
             </div>
             <br>
+
+            <!-- Signature Pad Section -->
+            <div class="signature-pad-container">
+                <h4>Signature</h4>
+                <canvas id="signature-pad" class="signature-pad"></canvas>
+                <button type="button" id="clear-signature">Clear Signature</button>
+                <input type="hidden" name="signature" id="signature-input">
+            </div>
+            <br>
+
             <div class="form-row submit-btn">
                 <div class="input-data">
                     <div class="inner"></div>
@@ -424,6 +486,9 @@
             </div>
         </form>
     </div>
+
+    <!-- SignaturePad JS library -->
+    <script src="https://cdn.jsdelivr.net/npm/signature_pad@4.0.0/dist/signature_pad.umd.min.js"></script>
 
     <script>
         let fileUploadCount = 1;
@@ -473,6 +538,41 @@
                 listItem.textContent = file.name;
                 fileList.appendChild(listItem);
             }
+        });
+
+        let signaturePad = new SignaturePad(document.getElementById('signature-pad'), {
+            minWidth: 1,
+            maxWidth: 3,
+            penColor: "black",
+            velocityFilterWeight: 0.7
+        });
+        let signatureInput = document.getElementById('signature-input');
+        let clearButton = document.getElementById('clear-signature');
+
+        clearButton.addEventListener('click', function () {
+            signaturePad.clear();
+            signatureInput.value = '';
+        });
+
+        // Prevent double submission
+        let isSubmitting = false;
+
+        // Handle form submission
+        document.querySelector('form').addEventListener('submit', function (e) {
+            if (isSubmitting) {
+                e.preventDefault();
+                return false;
+            }
+
+            if (!signaturePad.isEmpty()) {
+                signatureInput.value = signaturePad.toDataURL();
+            } else {
+                alert('Please provide a signature.');
+                e.preventDefault();
+                return false;
+            }
+
+            isSubmitting = true;  // Set submitting flag to prevent multiple submissions
         });
     </script>
 </body>
