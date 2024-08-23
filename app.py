@@ -372,9 +372,10 @@
 import os
 import sqlite3
 import uuid
-import base64
+import tempfile
+import base64  # Import base64 to handle the signature decoding
 from datetime import datetime
-from flask import Flask, request, render_template, redirect, url_for, flash, session, jsonify, send_from_directory
+from flask import Flask, request, render_template, redirect, url_for, flash, session, jsonify, send_from_directory, render_template_string
 from werkzeug.security import generate_password_hash, check_password_hash
 from werkzeug.utils import secure_filename
 from fpdf import FPDF
@@ -429,16 +430,6 @@ def format_date(date_str):
         return date_obj.strftime('%m/%d/%Y')
     except ValueError:
         return date_str
-
-@app.route('/uploads/<filename>')
-def uploaded_file(filename):
-    file_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
-    if os.path.exists(file_path) and os.path.getsize(file_path) > 0:
-        return send_from_directory(app.config['UPLOAD_FOLDER'], filename)
-    else:
-        logging.error(f"File {filename} not found or is empty.")
-        flash('The requested file is either missing or empty.')
-        return redirect(url_for('form'))
 
 def create_pdf(data, files, submission_time, browser, ip_address, unique_id, location, app_id):
     pdf = FPDF()
@@ -517,12 +508,25 @@ def create_pdf(data, files, submission_time, browser, ip_address, unique_id, loc
     pdf_filename = os.path.join(app.config['UPLOAD_FOLDER'], f"{app_id}.pdf")
     pdf.output(pdf_filename)
 
+    # Ensure the PDF file has been created and is not empty
     if os.path.exists(pdf_filename) and os.path.getsize(pdf_filename) > 0:
-        logging.info(f"PDF {pdf_filename} generated successfully.")
         return pdf_filename
     else:
-        logging.error(f"Failed to generate PDF {pdf_filename}. File is missing or empty.")
         raise ValueError("Generated PDF is empty or not created.")
+
+@app.route('/uploads/<filename>')
+def uploaded_file(filename):
+    file_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+    if os.path.exists(file_path) and os.path.getsize(file_path) > 0:
+        return send_from_directory(app.config['UPLOAD_FOLDER'], filename)
+    else:
+        flash('The requested file is either missing or empty.')
+        return redirect(url_for('form'))
+
+@app.route('/form')
+@app.route('/form.html')
+def form():
+    return render_template('form.html')
 
 @app.route('/submit_form', methods=['POST'])
 def submit_form():
@@ -533,13 +537,13 @@ def submit_form():
     try:
         for file in files:
             if file and allowed_file(file.filename):
+                # Ensure the file has content
                 if file.content_length > 0:
                     filename = secure_filename(file.filename)
                     file_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
                     file.save(file_path)
-                    uploaded_files.append(file_path)
+                    uploaded_files.append(filename)
                 else:
-                    logging.warning(f"Uploaded file {file.filename} is empty.")
                     flash('One of the uploaded files is empty.')
                     return redirect(url_for('form'))
 
@@ -548,11 +552,14 @@ def submit_form():
         ip_address = get_client_ip(request)
         unique_id = str(uuid.uuid4())
         location = get_location(ip_address)
+
+        # Generate custom app ID
         app_id = generate_app_id()
 
         pdf_filename = create_pdf(form_data, uploaded_files, submission_time, browser, ip_address, unique_id, location, app_id)
-        
-        form_data['uploaded_files'] = [os.path.basename(file) for file in uploaded_files]
+
+        # Include the uploaded file names in the form data
+        form_data['uploaded_files'] = uploaded_files
         form_data['pdf_filename'] = os.path.basename(pdf_filename)
         form_data['app_id'] = app_id
         form_data['submission_time'] = submission_time
@@ -561,10 +568,13 @@ def submit_form():
         form_data['unique_id'] = unique_id
         form_data['location'] = location
 
+        # Save submission to database
         insert_submission(app_id, form_data, submission_time)
 
+        # Send email to borrower
         borrower_email = form_data.get('borrower_email')
         borrower_name = f"{form_data.get('borrower_first_name', '')} {form_data.get('borrower_last_name', '')}"
+
         email_template = render_template('borrower_email_template.html', borrower_name=borrower_name, app_id=app_id, business_type=form_data.get('business_type', ''))
 
         send_borrower_email(borrower_email, "Application Submitted", email_template)
@@ -576,31 +586,29 @@ def submit_form():
         msg['From'] = sender_email
         msg['To'] = ", ".join(receiver_emails)
         msg['Subject'] = "You Have a New Application!"
-        body = "Please find the attached form submission and supporting documents."
+        body = "Please find the attached form submission and supporting documents. \nApplication sent from https://hempire-enterprise.com/"
         msg.attach(MIMEText(body, 'plain'))
-
         with open(pdf_filename, "rb") as attachment:
             part = MIMEBase('application', 'octet-stream')
             part.set_payload(attachment.read())
             encoders.encode_base64(part)
             part.add_header('Content-Disposition', f"attachment; filename= {os.path.basename(pdf_filename)}")
             msg.attach(part)
-
-        for file_path in uploaded_files:
-            with open(file_path, "rb") as attachment:
+        for file in uploaded_files:
+            with open(os.path.join(app.config['UPLOAD_FOLDER'], file), "rb") as attachment:
                 part = MIMEBase('application', 'octet-stream')
                 part.set_payload(attachment.read())
                 encoders.encode_base64(part)
-                part.add_header('Content-Disposition', f"attachment; filename= {os.path.basename(file_path)}")
+                part.add_header('Content-Disposition', f"attachment; filename= {file}")
                 msg.attach(part)
-
         server = smtplib.SMTP('smtp.gmail.com', 587)
         server.starttls()
         server.login(sender_email, password)
-        server.sendmail(sender_email, receiver_emails, msg.as_string())
+        text = msg.as_string()
+        server.sendmail(sender_email, receiver_emails, text)
         server.quit()
-
     finally:
+        # Temporary files and directory clean-up logic can be applied here if necessary
         pass
 
     return render_template('congratulation.html')
@@ -617,25 +625,21 @@ def send_borrower_email(to_email, subject, html_content):
         server = smtplib.SMTP('smtp.gmail.com', 587)
         server.starttls()
         server.login(sender_email, sender_password)
-        server.sendmail(sender_email, to_email, msg.as_string())
+        text = msg.as_string()
+        server.sendmail(sender_email, to_email, text)
         server.quit()
     except Exception as e:
-        logging.error(f"Failed to send email to {to_email}: {e}")
+        print(f"Failed to send email to {to_email}: {e}")
+
+@app.route('/congratulation.html')
+def congratulation():
+    return render_template('congratulation.html')
 
 @app.route('/')
 @app.route('/index')
 @app.route('/index.html')
 def index():
     return render_template('index.html')
-
-@app.route('/form')
-@app.route('/form.html')
-def form():
-    return render_template('form.html')
-
-@app.route('/congratulation.html')
-def congratulation():
-    return render_template('congratulation.html')
 
 @app.route("/contact")
 @app.route("/contact.html")
@@ -671,11 +675,11 @@ def send_email():
         server = smtplib.SMTP('smtp.gmail.com', 587)
         server.starttls()
         server.login(sender_email, sender_password)
-        server.sendmail(sender_email, receiver_emails, msg.as_string())
+        text = msg.as_string()
+        server.sendmail(sender_email, receiver_emails, text)
         server.quit()
         flash('Message sent successfully!')
     except Exception as e:
-        logging.error(f"Failed to send contact email: {e}")
         flash('Failed to send message. Please try again later.')
     return redirect(url_for('email_sent'))
 
