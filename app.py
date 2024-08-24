@@ -1,10 +1,9 @@
 # import os
 # import sqlite3
 # import uuid
-# import tempfile
-# import base64  # Import base64 to handle the signature decoding
+# import base64
 # from datetime import datetime
-# from flask import Flask, request, render_template, redirect, url_for, flash, session, jsonify, send_from_directory, render_template_string
+# from flask import Flask, request, render_template, redirect, url_for, flash, session, jsonify, send_from_directory
 # from werkzeug.security import generate_password_hash, check_password_hash
 # from werkzeug.utils import secure_filename
 # from fpdf import FPDF
@@ -16,13 +15,18 @@
 # from dotenv import load_dotenv
 # import requests
 # import json
+# import logging
 # from database import init_db, insert_submission, get_submissions, get_submission_by_id, delete_submission, insert_user, get_user_by_email, generate_app_id
+
+# # Setup logging
+# logging.basicConfig(level=logging.DEBUG)
 
 # load_dotenv()  # Load environment variables from .env file
 
 # app = Flask(__name__)
 # app.config['UPLOAD_FOLDER'] = 'uploads'
 # app.config['ALLOWED_EXTENSIONS'] = {'pdf'}
+# app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16 MB limit
 # app.secret_key = os.getenv('SECRET_KEY')
 
 # init_db()  # Initialize the database
@@ -55,6 +59,16 @@
 #         return date_obj.strftime('%m/%d/%Y')
 #     except ValueError:
 #         return date_str
+
+# @app.route('/uploads/<filename>')
+# def uploaded_file(filename):
+#     file_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+#     if os.path.exists(file_path) and os.path.getsize(file_path) > 0:
+#         return send_from_directory(app.config['UPLOAD_FOLDER'], filename)
+#     else:
+#         logging.error(f"File {filename} not found or is empty.")
+#         flash('The requested file is either missing or empty.')
+#         return redirect(url_for('form'))
 
 # def create_pdf(data, files, submission_time, browser, ip_address, unique_id, location, app_id):
 #     pdf = FPDF()
@@ -132,16 +146,13 @@
 #         pdf.cell(0, 6, txt=f"File: {os.path.basename(file)}", ln=True)
 #     pdf_filename = os.path.join(app.config['UPLOAD_FOLDER'], f"{app_id}.pdf")
 #     pdf.output(pdf_filename)
-#     return pdf_filename
 
-# @app.route('/uploads/<filename>')
-# def uploaded_file(filename):
-#     return send_from_directory(app.config['UPLOAD_FOLDER'], filename)
-
-# @app.route('/form')
-# @app.route('/form.html')
-# def form():
-#     return render_template('form.html')
+#     if os.path.exists(pdf_filename) and os.path.getsize(pdf_filename) > 0:
+#         logging.info(f"PDF {pdf_filename} generated successfully.")
+#         return pdf_filename
+#     else:
+#         logging.error(f"Failed to generate PDF {pdf_filename}. File is missing or empty.")
+#         raise ValueError("Generated PDF is empty or not created.")
 
 # @app.route('/submit_form', methods=['POST'])
 # def submit_form():
@@ -152,24 +163,33 @@
 #     try:
 #         for file in files:
 #             if file and allowed_file(file.filename):
-#                 filename = secure_filename(file.filename)
-#                 file_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
-#                 file.save(file_path)
-#                 uploaded_files.append(filename)
+#                 file.seek(0, os.SEEK_END)  # Move the cursor to the end of the file
+#                 file_length = file.tell()  # Get the current cursor position which is the size of the file
+#                 file.seek(0, os.SEEK_SET)  # Move the cursor back to the start of the file
 
+#                 if file_length > 0:
+#                     filename = secure_filename(file.filename)
+#                     file_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+#                     file.save(file_path)
+#                     uploaded_files.append(file_path)
+#                 else:
+#                     logging.warning(f"Uploaded file {file.filename} is empty (size: {file_length} bytes).")
+#                     flash('One of the uploaded files is empty. Please ensure the file is not empty before uploading.')
+#                     return redirect(url_for('form'))
+#             else:
+#                 logging.warning(f"File {file.filename} is not allowed or was not uploaded correctly.")
+
+#         # Continue processing if file uploads are successful
 #         submission_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 #         browser = request.user_agent.string
 #         ip_address = get_client_ip(request)
 #         unique_id = str(uuid.uuid4())
 #         location = get_location(ip_address)
-
-#         # Generate custom app ID
 #         app_id = generate_app_id()
 
 #         pdf_filename = create_pdf(form_data, uploaded_files, submission_time, browser, ip_address, unique_id, location, app_id)
-
-#         # Include the uploaded file names in the form data
-#         form_data['uploaded_files'] = uploaded_files
+        
+#         form_data['uploaded_files'] = [os.path.basename(file) for file in uploaded_files]
 #         form_data['pdf_filename'] = os.path.basename(pdf_filename)
 #         form_data['app_id'] = app_id
 #         form_data['submission_time'] = submission_time
@@ -178,13 +198,10 @@
 #         form_data['unique_id'] = unique_id
 #         form_data['location'] = location
 
-#         # Save submission to database
 #         insert_submission(app_id, form_data, submission_time)
 
-#         # Send email to borrower
 #         borrower_email = form_data.get('borrower_email')
 #         borrower_name = f"{form_data.get('borrower_first_name', '')} {form_data.get('borrower_last_name', '')}"
-
 #         email_template = render_template('borrower_email_template.html', borrower_name=borrower_name, app_id=app_id, business_type=form_data.get('business_type', ''))
 
 #         send_borrower_email(borrower_email, "Application Submitted", email_template)
@@ -196,30 +213,36 @@
 #         msg['From'] = sender_email
 #         msg['To'] = ", ".join(receiver_emails)
 #         msg['Subject'] = "You Have a New Application!"
-#         body = "Please find the attached form submission and supporting documents. \nApplication sent from https://hempire-enterprise.com/"
+#         body = "Please find the attached form submission and supporting documents."
 #         msg.attach(MIMEText(body, 'plain'))
+
+#         # Attach the generated PDF
 #         with open(pdf_filename, "rb") as attachment:
 #             part = MIMEBase('application', 'octet-stream')
 #             part.set_payload(attachment.read())
 #             encoders.encode_base64(part)
 #             part.add_header('Content-Disposition', f"attachment; filename= {os.path.basename(pdf_filename)}")
 #             msg.attach(part)
-#         for file in uploaded_files:
-#             with open(os.path.join(app.config['UPLOAD_FOLDER'], file), "rb") as attachment:
+
+#         # Attach uploaded files
+#         for file_path in uploaded_files:
+#             with open(file_path, "rb") as attachment:
 #                 part = MIMEBase('application', 'octet-stream')
 #                 part.set_payload(attachment.read())
 #                 encoders.encode_base64(part)
-#                 part.add_header('Content-Disposition', f"attachment; filename= {file}")
+#                 part.add_header('Content-Disposition', f"attachment; filename= {os.path.basename(file_path)}")
 #                 msg.attach(part)
+
 #         server = smtplib.SMTP('smtp.gmail.com', 587)
 #         server.starttls()
 #         server.login(sender_email, password)
-#         text = msg.as_string()
-#         server.sendmail(sender_email, receiver_emails, text)
+#         server.sendmail(sender_email, receiver_emails, msg.as_string())
 #         server.quit()
-#     finally:
-#         # Temporary files and directory clean-up logic can be applied here if necessary
-#         pass
+
+#     except Exception as e:
+#         logging.error(f"Error occurred during form submission: {e}")
+#         flash('An error occurred while processing your submission. Please try again.')
+#         return redirect(url_for('form'))
 
 #     return render_template('congratulation.html')
 
@@ -235,21 +258,25 @@
 #         server = smtplib.SMTP('smtp.gmail.com', 587)
 #         server.starttls()
 #         server.login(sender_email, sender_password)
-#         text = msg.as_string()
-#         server.sendmail(sender_email, to_email, text)
+#         server.sendmail(sender_email, to_email, msg.as_string())
 #         server.quit()
 #     except Exception as e:
-#         print(f"Failed to send email to {to_email}: {e}")
-
-# @app.route('/congratulation.html')
-# def congratulation():
-#     return render_template('congratulation.html')
+#         logging.error(f"Failed to send email to {to_email}: {e}")
 
 # @app.route('/')
 # @app.route('/index')
 # @app.route('/index.html')
 # def index():
 #     return render_template('index.html')
+
+# @app.route('/form')
+# @app.route('/form.html')
+# def form():
+#     return render_template('form.html')
+
+# @app.route('/congratulation.html')
+# def congratulation():
+#     return render_template('congratulation.html')
 
 # @app.route("/contact")
 # @app.route("/contact.html")
@@ -285,11 +312,11 @@
 #         server = smtplib.SMTP('smtp.gmail.com', 587)
 #         server.starttls()
 #         server.login(sender_email, sender_password)
-#         text = msg.as_string()
-#         server.sendmail(sender_email, receiver_emails, text)
+#         server.sendmail(sender_email, receiver_emails, msg.as_string())
 #         server.quit()
 #         flash('Message sent successfully!')
 #     except Exception as e:
+#         logging.error(f"Failed to send contact email: {e}")
 #         flash('Failed to send message. Please try again later.')
 #     return redirect(url_for('email_sent'))
 
@@ -300,7 +327,7 @@
 # # User Authentication
 # @app.route('/login', methods=['GET', 'POST'])
 # def login():
-#     if request.method == 'POST':
+#     if request.method == ['POST']:
 #         email = request.form['email']
 #         password = request.form['password']
 #         user = get_user_by_email(email)
@@ -314,7 +341,7 @@
 
 # @app.route('/signup', methods=['GET', 'POST'])
 # def signup():
-#     if request.method == 'POST':
+#     if request.method == ['POST']:
 #         username = request.form['username']
 #         email = request.form['email']
 #         password = request.form['password']
@@ -386,7 +413,6 @@ from dotenv import load_dotenv
 import requests
 import json
 import logging
-from database import init_db, insert_submission, get_submissions, get_submission_by_id, delete_submission, insert_user, get_user_by_email, generate_app_id
 
 # Setup logging
 logging.basicConfig(level=logging.DEBUG)
@@ -398,6 +424,21 @@ app.config['UPLOAD_FOLDER'] = 'uploads'
 app.config['ALLOWED_EXTENSIONS'] = {'pdf'}
 app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16 MB limit
 app.secret_key = os.getenv('SECRET_KEY')
+
+def init_db():
+    conn = sqlite3.connect('database.db')
+    cursor = conn.cursor()
+    # Create users table if it doesn't exist
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS users (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            username TEXT UNIQUE NOT NULL,
+            email TEXT UNIQUE NOT NULL,
+            password TEXT NOT NULL
+        )
+    ''')
+    conn.commit()
+    conn.close()
 
 init_db()  # Initialize the database
 
@@ -695,38 +736,66 @@ def email_sent():
     return render_template('email_sent.html')
 
 # User Authentication
-@app.route('/login', methods=['GET', 'POST'])
-def login():
-    if request.method == ['POST']:
-        email = request.form['email']
-        password = request.form['password']
-        user = get_user_by_email(email)
-        if user and check_password_hash(user[3], password):  # user[3] is the password field in the users table
-            session['user_id'] = user[0]  # user[0] is the user id
-            flash('Login successful!')
-            return redirect(url_for('dashboard'))
-        else:
-            flash('Invalid email or password!')
-    return render_template('login.html')
-
 @app.route('/signup', methods=['GET', 'POST'])
 def signup():
-    if request.method == ['POST']:
+    if request.method == 'POST':
         username = request.form['username']
         email = request.form['email']
         password = request.form['password']
+        
+        # Hash the password for security
         hashed_password = generate_password_hash(password, method='pbkdf2:sha256')
+        
+        # Check if the username already exists
+        if get_user_by_username(username):
+            flash('Username already exists, please choose another one.')
+            return redirect(url_for('signup'))
+        
         try:
-            insert_user(username, email, hashed_password)
+            # Insert the user into the database
+            conn = sqlite3.connect('database.db')
+            cursor = conn.cursor()
+            cursor.execute("INSERT INTO users (username, email, password) VALUES (?, ?, ?)",
+                           (username, email, hashed_password))
+            conn.commit()
+            conn.close()
             flash('Signup successful! Please log in.')
             return redirect(url_for('login'))
-        except sqlite3.IntegrityError:
+        except sqlite3.IntegrityError as e:
+            logging.error(f"Error during signup: {e}")
             flash('Email or username already exists!')
+            return redirect(url_for('signup'))
+        except Exception as e:
+            logging.error(f"Unexpected error during signup: {e}")
+            flash('An error occurred. Please try again.')
+            return redirect(url_for('signup'))
     return render_template('signup.html')
+
+@app.route('/login', methods=['GET', 'POST'])
+def login():
+    if request.method == 'POST':
+        email = request.form['email']
+        password = request.form['password']
+        
+        # Fetch the user from the database by email
+        user = get_user_by_email(email)
+        
+        if user and check_password_hash(user[3], password):  # user[3] is the hashed password field
+            # Set the user session
+            session['user_id'] = user[0]  # user[0] is the user id
+            session['username'] = user[1]  # user[1] is the username
+            flash('Login successful!')
+            return redirect(url_for('dashboard'))
+        else:
+            logging.warning(f"Failed login attempt for email: {email}")
+            flash('Invalid email or password!')
+            return redirect(url_for('login'))
+    return render_template('login.html')
 
 @app.route('/logout')
 def logout():
     session.pop('user_id', None)
+    session.pop('username', None)
     flash('Logged out successfully!')
     return redirect(url_for('login'))
 
@@ -734,6 +803,7 @@ def logout():
 @app.route('/dashboard')
 def dashboard():
     if 'user_id' not in session:
+        flash('Please log in to access the dashboard.')
         return redirect(url_for('login'))
     return render_template('dashboard.html')
 
@@ -760,6 +830,22 @@ def api_submission(submission_id):
 def api_delete_submission(submission_id):
     delete_submission(submission_id)
     return jsonify({'message': 'Submission deleted successfully'})
+
+def get_user_by_username(username):
+    conn = sqlite3.connect('database.db')
+    cursor = conn.cursor()
+    cursor.execute("SELECT * FROM users WHERE username = ?", (username,))
+    user = cursor.fetchone()
+    conn.close()
+    return user
+
+def get_user_by_email(email):
+    conn = sqlite3.connect('database.db')
+    cursor = conn.cursor()
+    cursor.execute("SELECT * FROM users WHERE email = ?", (email,))
+    user = cursor.fetchone()
+    conn.close()
+    return user
 
 if __name__ == "__main__":
     app.run(debug=True)
