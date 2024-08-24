@@ -705,7 +705,7 @@ def login():
 
 @app.route('/signup', methods=['GET', 'POST'])
 def signup():
-    if request.method == 'POST']:
+    if request.method == ['POST']:
         username = request.form['username']
         email = request.form['email']
         password = request.form['password']
