@@ -697,7 +697,7 @@ def email_sent():
 # User Authentication
 @app.route('/login', methods=['GET', 'POST'])
 def login():
-    if request.method == 'POST']:
+    if request.method == ['POST']:
         email = request.form['email']
         password = request.form['password']
         user = get_user_by_email(email)
@@ -711,7 +711,7 @@ def login():
 
 @app.route('/signup', methods=['GET', 'POST'])
 def signup():
-    if request.method == 'POST']:
+    if request.method == ['POST']:
         username = request.form['username']
         email = request.form['email']
         password = request.form['password']
