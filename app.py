@@ -533,15 +533,21 @@ def submit_form():
     try:
         for file in files:
             if file and allowed_file(file.filename):
-                if file.content_length > 0:
+                file.seek(0, os.SEEK_END)  # Move the cursor to the end of the file
+                file_length = file.tell()  # Get the current cursor position which is the size of the file
+                file.seek(0, os.SEEK_SET)  # Move the cursor back to the start of the file
+
+                if file_length > 0:
                     filename = secure_filename(file.filename)
                     file_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
                     file.save(file_path)
                     uploaded_files.append(file_path)
                 else:
-                    logging.warning(f"Uploaded file {file.filename} is empty.")
-                    flash('One of the uploaded files is empty.')
+                    logging.warning(f"Uploaded file {file.filename} is empty (size: {file_length} bytes).")
+                    flash('One of the uploaded files is empty. Please ensure the file is not empty before uploading.')
                     return redirect(url_for('form'))
+            else:
+                logging.warning(f"File {file.filename} is not allowed or was not uploaded correctly.")
 
         # Continue processing if file uploads are successful
         submission_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
@@ -691,7 +697,7 @@ def email_sent():
 # User Authentication
 @app.route('/login', methods=['GET', 'POST'])
 def login():
-    if request.method == ['POST']:
+    if request.method == 'POST']:
         email = request.form['email']
         password = request.form['password']
         user = get_user_by_email(email)
@@ -705,7 +711,7 @@ def login():
 
 @app.route('/signup', methods=['GET', 'POST'])
 def signup():
-    if request.method == ['POST']:
+    if request.method == 'POST']:
         username = request.form['username']
         email = request.form['email']
         password = request.form['password']
