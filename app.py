@@ -437,6 +437,46 @@ def init_db():
             password TEXT NOT NULL
         )
     ''')
+    # Create submissions table if it doesn't exist
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS submissions (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            app_id TEXT UNIQUE NOT NULL,
+            data TEXT NOT NULL,
+            submission_time TEXT NOT NULL
+        )
+    ''')
+    conn.commit()
+    conn.close()
+
+def get_submissions():
+    conn = sqlite3.connect('database.db')
+    cursor = conn.cursor()
+    cursor.execute("SELECT * FROM submissions")
+    submissions = cursor.fetchall()
+    conn.close()
+    return submissions
+
+def insert_submission(app_id, data, submission_time):
+    conn = sqlite3.connect('database.db')
+    cursor = conn.cursor()
+    cursor.execute("INSERT INTO submissions (app_id, data, submission_time) VALUES (?, ?, ?)",
+                   (app_id, json.dumps(data), submission_time))
+    conn.commit()
+    conn.close()
+
+def get_submission_by_id(submission_id):
+    conn = sqlite3.connect('database.db')
+    cursor = conn.cursor()
+    cursor.execute("SELECT * FROM submissions WHERE id = ?", (submission_id,))
+    submission = cursor.fetchone()
+    conn.close()
+    return submission
+
+def delete_submission(submission_id):
+    conn = sqlite3.connect('database.db')
+    cursor = conn.cursor()
+    cursor.execute("DELETE FROM submissions WHERE id = ?", (submission_id,))
     conn.commit()
     conn.close()
 
@@ -470,6 +510,9 @@ def format_date(date_str):
         return date_obj.strftime('%m/%d/%Y')
     except ValueError:
         return date_str
+
+def generate_app_id():
+    return str(uuid.uuid4())
 
 @app.route('/uploads/<filename>')
 def uploaded_file(filename):
