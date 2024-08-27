@@ -215,9 +215,8 @@
 #     conn.close()
 #     return user
 import psycopg2
-import json
-import random
 import os
+import json
 
 def get_db_connection():
     conn = psycopg2.connect(
@@ -232,7 +231,7 @@ def get_db_connection():
 def init_db():
     conn = get_db_connection()
     cursor = conn.cursor()
-    
+
     # Create submissions table
     cursor.execute('''
         CREATE TABLE IF NOT EXISTS submissions (
@@ -247,16 +246,16 @@ def init_db():
     conn.close()
 
 def generate_app_id():
+    import random
     return f"HE-{random.randint(111111, 999999)}"
 
 def insert_submission(app_id, data, submission_time):
     conn = get_db_connection()
     cursor = conn.cursor()
-    data_json = json.dumps(data)
     cursor.execute('''
         INSERT INTO submissions (app_id, data, submission_time)
         VALUES (%s, %s, %s)
-    ''', (app_id, data_json, submission_time))
+    ''', (app_id, json.dumps(data), submission_time))
     conn.commit()
     conn.close()
 
