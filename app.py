@@ -395,33 +395,33 @@
 #     app.run(debug=True)
 
 import os
-import uuid
-import base64
-from datetime import datetime
+import logging
+import sqlite3
 from flask import Flask, request, render_template, redirect, url_for, flash, session, jsonify, send_from_directory
 from werkzeug.security import generate_password_hash, check_password_hash
-from werkzeug.utils import secure_filename
+from dotenv import load_dotenv
 from fpdf import FPDF
+import uuid
+import base64
 import smtplib
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from email.mime.base import MIMEBase
 from email import encoders
-from dotenv import load_dotenv
 import requests
-import logging
+import json
 from database import init_db, insert_submission, get_submissions, get_submission_by_id, delete_submission, insert_user, get_user_by_email, generate_app_id
 
-# Setup logging
-logging.basicConfig(level=logging.DEBUG)
-
-load_dotenv()  # Load environment variables from .env file
-
+# Initialize the Flask app and load environment variables
 app = Flask(__name__)
+load_dotenv()
+
+app.secret_key = os.getenv('SECRET_KEY') or 'your_default_secret_key'
 app.config['UPLOAD_FOLDER'] = 'uploads'
 app.config['ALLOWED_EXTENSIONS'] = {'pdf'}
 app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16 MB limit
-app.secret_key = os.getenv('SECRET_KEY') or 'your_default_secret_key'  # Ensure the secret key is set
+
+logging.basicConfig(level=logging.INFO)
 
 # Initialize the database
 init_db()
@@ -429,10 +429,8 @@ init_db()
 if not os.path.exists(app.config['UPLOAD_FOLDER']):
     os.makedirs(app.config['UPLOAD_FOLDER'])
 
-# Helper functions
 def allowed_file(filename):
-    return '.' in filename and \
-           filename.rsplit('.', 1)[1].lower() in app.config['ALLOWED_EXTENSIONS']
+    return '.' in filename and filename.rsplit('.', 1)[1].lower() in app.config['ALLOWED_EXTENSIONS']
 
 def get_client_ip(request):
     if request.environ.get('HTTP_X_FORWARDED_FOR'):
@@ -455,17 +453,6 @@ def format_date(date_str):
         return date_obj.strftime('%m/%d/%Y')
     except ValueError:
         return date_str
-
-# Routes
-@app.route('/uploads/<filename>')
-def uploaded_file(filename):
-    file_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
-    if os.path.exists(file_path) and os.path.getsize(file_path) > 0:
-        return send_from_directory(app.config['UPLOAD_FOLDER'], filename)
-    else:
-        logging.error(f"File {filename} not found or is empty.")
-        flash('The requested file is either missing or empty.')
-        return redirect(url_for('form'))
 
 def create_pdf(data, files, submission_time, browser, ip_address, unique_id, location, app_id):
     pdf = FPDF()
@@ -775,12 +762,13 @@ def signup():
                 return redirect(url_for('dashboard'))
             else:
                 logging.error(f"Verification failed: User {username} with email {email} is not in the database.")
-                flash('There was an issue with your signup. Please try again.')
+                flash('There was an error with your signup. Please try again.')
                 return redirect(url_for('signup'))
 
         except sqlite3.IntegrityError:
-            logging.error(f"Signup attempt failed: Email or username already exists - {username}, {email}.")
+            logging.error(f"Signup failed: Email or username already exists - {username}, {email}.")
             flash('Email or username already exists!')
+            return redirect(url_for('signup'))
 
     return render_template('signup.html')
 
@@ -797,10 +785,10 @@ def dashboard():
     logging.info("Accessing dashboard.")
     if 'user_id' not in session:
         logging.warning("Unauthorized access attempt to dashboard.")
-        flash("You must be logged in to access the dashboard.")
         return redirect(url_for('login'))
 
     submissions = get_submissions()
+    logging.debug(f"Submissions retrieved: {submissions}")
     return render_template('dashboard.html', submissions=submissions)
 
 @app.route('/api/submissions', methods=['GET'])
