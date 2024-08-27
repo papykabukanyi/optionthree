@@ -398,7 +398,7 @@ import os
 import uuid
 import base64
 from datetime import datetime
-from flask import Flask, request, render_template, redirect, url_for, flash, jsonify, send_from_directory
+from flask import Flask, request, render_template, redirect, url_for, flash, session, jsonify, send_from_directory
 from werkzeug.utils import secure_filename
 from fpdf import FPDF
 import smtplib
@@ -429,8 +429,7 @@ if not os.path.exists(app.config['UPLOAD_FOLDER']):
     os.makedirs(app.config['UPLOAD_FOLDER'])
 
 def allowed_file(filename):
-    return '.' in filename and \
-           filename.rsplit('.', 1)[1].lower() in app.config['ALLOWED_EXTENSIONS']
+    return '.' in filename and filename.rsplit('.', 1)[1].lower() in app.config['ALLOWED_EXTENSIONS']
 
 def get_client_ip(request):
     if request.environ.get('HTTP_X_FORWARDED_FOR'):
@@ -469,7 +468,6 @@ def create_pdf(data, files, submission_time, browser, ip_address, unique_id, loc
     pdf.add_page()
     pdf.set_font("Arial", size=12)
     pdf.image('static/assets/img/Logo.png', 10, 8, 33)
-    pdf.image('static/assets/img/clients/hil.png', 170, 8, 33)
     pdf.ln(15)
     pdf.set_font("Arial", 'B', 14)
     pdf.cell(0, 10, txt="Business Information", ln=True)
@@ -503,6 +501,7 @@ def create_pdf(data, files, submission_time, browser, ip_address, unique_id, loc
     pdf.cell(0, 5, txt=f"SSN: {data.get('coapplicant_ssn', '')}", ln=True)
     pdf.cell(0, 5, txt=f"Phone: {data.get('coapplicant_phone', '')}", ln=True)
     pdf.cell(0, 5, txt=f"Email: {data.get('coapplicant_email', '')}", ln=True)
+    pdf.cell(0, 5, txt=f"Preferred Method of Contact: {data.get('coapplicant_preferred_contact', '')}", ln=True)
     pdf.cell(0, 5, txt=f"Address: {data.get('coapplicant_address_line_1', '')}, {data.get('coapplicant_city', '')}, {data.get('coapplicant_state', '')} {data.get('coapplicant_zip_code', '')}", ln=True)
     pdf.ln(2)
     pdf.set_font("Arial", 'B', 14)
@@ -593,68 +592,12 @@ def submit_form():
 
         insert_submission(app_id, form_data, submission_time)
 
-        borrower_email = form_data.get('borrower_email')
-        borrower_name = f"{form_data.get('borrower_first_name', '')} {form_data.get('borrower_last_name', '')}"
-        email_template = render_template('borrower_email_template.html', borrower_name=borrower_name, app_id=app_id, business_type=form_data.get('business_type', ''))
-
-        send_borrower_email(borrower_email, "Application Submitted", email_template)
-
-        sender_email = os.getenv('SENDER_EMAIL')
-        receiver_emails = [os.getenv('RECEIVER_EMAIL_1'), os.getenv('RECEIVER_EMAIL_2')]
-        password = os.getenv('SENDER_PASSWORD')
-        msg = MIMEMultipart()
-        msg['From'] = sender_email
-        msg['To'] = ", ".join(receiver_emails)
-        msg['Subject'] = "You Have a New Application!"
-        body = "Please find the attached form submission and supporting documents."
-        msg.attach(MIMEText(body, 'plain'))
-
-        # Attach the generated PDF
-        with open(pdf_filename, "rb") as attachment:
-            part = MIMEBase('application', 'octet-stream')
-            part.set_payload(attachment.read())
-            encoders.encode_base64(part)
-            part.add_header('Content-Disposition', f"attachment; filename= {os.path.basename(pdf_filename)}")
-            msg.attach(part)
-
-        # Attach uploaded files
-        for file_path in uploaded_files:
-            with open(file_path, "rb") as attachment:
-                part = MIMEBase('application', 'octet-stream')
-                part.set_payload(attachment.read())
-                encoders.encode_base64(part)
-                part.add_header('Content-Disposition', f"attachment; filename= {os.path.basename(file_path)}")
-                msg.attach(part)
-
-        server = smtplib.SMTP('smtp.gmail.com', 587)
-        server.starttls()
-        server.login(sender_email, password)
-        server.sendmail(sender_email, receiver_emails, msg.as_string())
-        server.quit()
-
     except Exception as e:
         logging.error(f"Error occurred during form submission: {e}")
         flash('An error occurred while processing your submission. Please try again.')
         return redirect(url_for('form'))
 
     return render_template('congratulation.html')
-
-def send_borrower_email(to_email, subject, html_content):
-    sender_email = os.getenv('SENDER_EMAIL')
-    sender_password = os.getenv('SENDER_PASSWORD')
-    msg = MIMEMultipart()
-    msg['From'] = sender_email
-    msg['To'] = to_email
-    msg['Subject'] = subject
-    msg.attach(MIMEText(html_content, 'html'))
-    try:
-        server = smtplib.SMTP('smtp.gmail.com', 587)
-        server.starttls()
-        server.login(sender_email, sender_password)
-        server.sendmail(sender_email, to_email, msg.as_string())
-        server.quit()
-    except Exception as e:
-        logging.error(f"Failed to send email to {to_email}: {e}")
 
 @app.route('/')
 @app.route('/index')
@@ -686,41 +629,10 @@ def questions():
 def about():
     return render_template("about.html")
 
-@app.route('/send_email', methods=['POST'])
-def send_email():
-    full_name = request.form['full_name']
-    email = request.form['email']
-    phone_number = request.form['phone_number']
-    message = request.form['message']
-    sender_email = os.getenv('SENDER_EMAIL')
-    sender_password = os.getenv('SENDER_PASSWORD')
-    receiver_emails = [os.getenv('RECEIVER_EMAIL_1'), os.getenv('RECEIVER_EMAIL_2')]
-    msg = MIMEMultipart()
-    msg['From'] = sender_email
-    msg['To'] = ", ".join(receiver_emails)
-    msg['Subject'] = "New Contact Form Submission"
-    body = f"Name: {full_name}\nEmail: {email}\nPhone: {phone_number}\nMessage: {message}"
-    msg.attach(MIMEText(body, 'plain'))
-    try:
-        server = smtplib.SMTP('smtp.gmail.com', 587)
-        server.starttls()
-        server.login(sender_email, sender_password)
-        server.sendmail(sender_email, receiver_emails, msg.as_string())
-        server.quit()
-        flash('Message sent successfully!')
-    except Exception as e:
-        logging.error(f"Failed to send contact email: {e}")
-        flash('Failed to send message. Please try again later.')
-    return redirect(url_for('email_sent'))
-
-@app.route('/email_sent.html')
-def email_sent():
-    return render_template('email_sent.html')
-
+@app.route('/dashboard.html')
 @app.route('/dashboard')
 def dashboard():
-    submissions = get_submissions()
-    return render_template('dashboard.html', submissions=submissions)
+    return render_template('dashboard.html')
 
 @app.route('/api/submissions', methods=['GET'])
 def api_submissions():
@@ -734,8 +646,6 @@ def api_submission(submission_id):
         data = json.loads(submission[2])
         return jsonify({'id': submission[0], 
                         'app_id': submission[1], 
-                        'business_type': data.get('business_type'),  
-                        'signature': data.get('signature'),  # Include the signature data
                         'data': submission[2], 
                         'submission_time': submission[3]})
     else:
@@ -748,3 +658,4 @@ def api_delete_submission(submission_id):
 
 if __name__ == "__main__":
     app.run(debug=True)
+        
