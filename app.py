@@ -395,7 +395,6 @@
 #     app.run(debug=True)
 
 import os
-import sqlite3
 import uuid
 import base64
 from datetime import datetime
@@ -410,7 +409,6 @@ from email.mime.base import MIMEBase
 from email import encoders
 from dotenv import load_dotenv
 import requests
-import json
 import logging
 from database import init_db, insert_submission, get_submissions, get_submission_by_id, delete_submission, insert_user, get_user_by_email, generate_app_id
 
@@ -801,7 +799,9 @@ def dashboard():
         logging.warning("Unauthorized access attempt to dashboard.")
         flash("You must be logged in to access the dashboard.")
         return redirect(url_for('login'))
-    return render_template('dashboard.html')
+
+    submissions = get_submissions()
+    return render_template('dashboard.html', submissions=submissions)
 
 @app.route('/api/submissions', methods=['GET'])
 def api_submissions():
@@ -828,4 +828,5 @@ def api_delete_submission(submission_id):
     return jsonify({'message': 'Submission deleted successfully'})
 
 if __name__ == "__main__":
-    app.run(debug=True)
+    port = int(os.getenv("PORT", 5000))
+    app.run(host='0.0.0.0', port=port, debug=False)
