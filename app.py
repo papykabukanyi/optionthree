@@ -398,8 +398,7 @@ import os
 import uuid
 import base64
 from datetime import datetime
-from flask import Flask, request, render_template, redirect, url_for, flash, session, jsonify, send_from_directory
-from werkzeug.security import generate_password_hash, check_password_hash
+from flask import Flask, request, render_template, redirect, url_for, flash, jsonify, send_from_directory
 from werkzeug.utils import secure_filename
 from fpdf import FPDF
 import smtplib
@@ -411,7 +410,7 @@ from dotenv import load_dotenv
 import requests
 import json
 import logging
-from database import init_db, insert_submission, get_submissions, get_submission_by_id, delete_submission, insert_user, get_user_by_email, generate_app_id
+from database import init_db, insert_submission, get_submissions, get_submission_by_id, delete_submission, generate_app_id
 
 # Setup logging
 logging.basicConfig(level=logging.DEBUG)
@@ -504,7 +503,6 @@ def create_pdf(data, files, submission_time, browser, ip_address, unique_id, loc
     pdf.cell(0, 5, txt=f"SSN: {data.get('coapplicant_ssn', '')}", ln=True)
     pdf.cell(0, 5, txt=f"Phone: {data.get('coapplicant_phone', '')}", ln=True)
     pdf.cell(0, 5, txt=f"Email: {data.get('coapplicant_email', '')}", ln=True)
-    pdf.cell(0, 5, txt=f"Preferred Method of Contact: {data.get('coapplicant_preferred_contact', '')}", ln=True)
     pdf.cell(0, 5, txt=f"Address: {data.get('coapplicant_address_line_1', '')}, {data.get('coapplicant_city', '')}, {data.get('coapplicant_state', '')} {data.get('coapplicant_zip_code', '')}", ln=True)
     pdf.ln(2)
     pdf.set_font("Arial", 'B', 14)
@@ -719,48 +717,10 @@ def send_email():
 def email_sent():
     return render_template('email_sent.html')
 
-# User Authentication
-@app.route('/login', methods=['GET', 'POST'])
-def login():
-    if request.method == ['POST']:
-        email = request.form['email']
-        password = request.form['password']
-        user = get_user_by_email(email)
-        if user and check_password_hash(user[3], password):  # user[3] is the password field in the users table
-            session['user_id'] = user[0]  # user[0] is the user id
-            flash('Login successful!')
-            return redirect(url_for('dashboard'))
-        else:
-            flash('Invalid email or password!')
-    return render_template('login.html')
-
-@app.route('/signup', methods=['GET', 'POST'])
-def signup():
-    if request.method == ['POST']:
-        username = request.form['username']
-        email = request.form['email']
-        password = request.form['password']
-        hashed_password = generate_password_hash(password, method='pbkdf2:sha256')
-        try:
-            insert_user(username, email, hashed_password)
-            flash('Signup successful! Please log in.')
-            return redirect(url_for('login'))
-        except psycopg2.IntegrityError:
-            flash('Email or username already exists!')
-    return render_template('signup.html')
-
-@app.route('/logout')
-def logout():
-    session.pop('user_id', None)
-    flash('Logged out successfully!')
-    return redirect(url_for('login'))
-
-@app.route('/dashboard.html')
 @app.route('/dashboard')
 def dashboard():
-    if 'user_id' not in session:
-        return redirect(url_for('login'))
-    return render_template('dashboard.html')
+    submissions = get_submissions()
+    return render_template('dashboard.html', submissions=submissions)
 
 @app.route('/api/submissions', methods=['GET'])
 def api_submissions():
