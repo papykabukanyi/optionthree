@@ -96,7 +96,6 @@
 #     conn.close()
 #     return user
 
-
 import psycopg2
 import json
 import random
@@ -119,7 +118,7 @@ def get_db_connection():
 def init_db():
     conn = get_db_connection()
     cursor = conn.cursor()
-    
+
     # Create submissions table
     cursor.execute('''
         CREATE TABLE IF NOT EXISTS submissions (
