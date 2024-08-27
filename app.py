@@ -395,36 +395,37 @@
 #     app.run(debug=True)
 
 import os
-import logging
 import sqlite3
-from flask import Flask, request, render_template, redirect, url_for, flash, session, jsonify, send_from_directory
-from werkzeug.security import generate_password_hash, check_password_hash
-from dotenv import load_dotenv
-from fpdf import FPDF
 import uuid
 import base64
+from datetime import datetime
+from flask import Flask, request, render_template, redirect, url_for, flash, session, jsonify, send_from_directory
+from werkzeug.security import generate_password_hash, check_password_hash
+from werkzeug.utils import secure_filename  # Ensure this is included
+from fpdf import FPDF
 import smtplib
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from email.mime.base import MIMEBase
 from email import encoders
+from dotenv import load_dotenv
 import requests
 import json
+import logging
 from database import init_db, insert_submission, get_submissions, get_submission_by_id, delete_submission, insert_user, get_user_by_email, generate_app_id
 
-# Initialize the Flask app and load environment variables
-app = Flask(__name__)
-load_dotenv()
+# Setup logging
+logging.basicConfig(level=logging.DEBUG)
 
-app.secret_key = os.getenv('SECRET_KEY') or 'your_default_secret_key'
+load_dotenv()  # Load environment variables from .env file
+
+app = Flask(__name__)
 app.config['UPLOAD_FOLDER'] = 'uploads'
 app.config['ALLOWED_EXTENSIONS'] = {'pdf'}
 app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16 MB limit
+app.secret_key = os.getenv('SECRET_KEY')
 
-logging.basicConfig(level=logging.INFO)
-
-# Initialize the database
-init_db()
+init_db()  # Initialize the database
 
 if not os.path.exists(app.config['UPLOAD_FOLDER']):
     os.makedirs(app.config['UPLOAD_FOLDER'])
@@ -453,6 +454,16 @@ def format_date(date_str):
         return date_obj.strftime('%m/%d/%Y')
     except ValueError:
         return date_str
+
+@app.route('/uploads/<filename>')
+def uploaded_file(filename):
+    file_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+    if os.path.exists(file_path) and os.path.getsize(file_path) > 0:
+        return send_from_directory(app.config['UPLOAD_FOLDER'], filename)
+    else:
+        logging.error(f"File {filename} not found or is empty.")
+        flash('The requested file is either missing or empty.')
+        return redirect(url_for('form'))
 
 def create_pdf(data, files, submission_time, browser, ip_address, unique_id, location, app_id):
     pdf = FPDF()
@@ -715,25 +726,17 @@ def login():
         email = request.form['email']
         password = request.form['password']
         logging.info(f"Attempting login for email: {email}")
-
         user = get_user_by_email(email)
         logging.debug(f"User data retrieved: {user}")
-
-        if user is None:
+        if user and check_password_hash(user[3], password):  # user[3] is the password field in the users table
+            session['user_id'] = user[0]  # user[0] is the user id
+            flash('Login successful!')
+            logging.info(f"Login successful for user_id: {user[0]}")
+            return redirect(url_for('dashboard'))
+        else:
             logging.warning(f"Login attempt with non-existent email: {email}")
             flash('Invalid email or password!')
             return redirect(url_for('login'))
-
-        if not check_password_hash(user[3], password):
-            logging.warning(f"Login attempt with incorrect password for email: {email}")
-            flash('Invalid email or password!')
-            return redirect(url_for('login'))
-
-        session['user_id'] = user[0]  # user[0] is the user id
-        logging.info(f"User {email} logged in successfully.")
-        flash('Login successful!')
-        return redirect(url_for('dashboard'))
-    
     return render_template('login.html')
 
 @app.route('/signup', methods=['GET', 'POST'])
@@ -744,52 +747,43 @@ def signup():
         email = request.form['email']
         password = request.form['password']
         hashed_password = generate_password_hash(password, method='pbkdf2:sha256')
-
         try:
             logging.debug(f"Attempting to insert user: {username}, {email}")
             insert_user(username, email, hashed_password)
             logging.info(f"User {username} with email {email} registered successfully.")
-
-            # Verify the user was added
             user = get_user_by_email(email)
-            logging.debug(f"Verification check after insert: {user}")
-
             if user:
+                logging.debug(f"Verification check after insert: {user}")
                 logging.info(f"Verification successful: User {username} with email {email} is now in the database.")
                 session['user_id'] = user[0]
                 logging.info(f"User {username} automatically logged in after signup.")
-                flash('Signup successful! Redirecting to dashboard...')
+                flash('Signup successful! Welcome!')
                 return redirect(url_for('dashboard'))
             else:
-                logging.error(f"Verification failed: User {username} with email {email} is not in the database.")
-                flash('There was an error with your signup. Please try again.')
+                logging.error(f"Verification failed: User {username} could not be found in the database after signup.")
+                flash('Signup failed. Please try again.')
                 return redirect(url_for('signup'))
-
         except sqlite3.IntegrityError:
-            logging.error(f"Signup failed: Email or username already exists - {username}, {email}.")
+            logging.error(f"Signup attempt failed: Email or username already exists - {username}, {email}.")
             flash('Email or username already exists!')
             return redirect(url_for('signup'))
-
     return render_template('signup.html')
 
 @app.route('/logout')
 def logout():
     session.pop('user_id', None)
-    logging.info("User logged out successfully.")
     flash('Logged out successfully!')
+    logging.info("User logged out successfully.")
     return redirect(url_for('login'))
 
 @app.route('/dashboard.html')
 @app.route('/dashboard')
 def dashboard():
-    logging.info("Accessing dashboard.")
     if 'user_id' not in session:
         logging.warning("Unauthorized access attempt to dashboard.")
         return redirect(url_for('login'))
-
-    submissions = get_submissions()
-    logging.debug(f"Submissions retrieved: {submissions}")
-    return render_template('dashboard.html', submissions=submissions)
+    logging.info("Accessing dashboard.")
+    return render_template('dashboard.html')
 
 @app.route('/api/submissions', methods=['GET'])
 def api_submissions():
@@ -816,5 +810,4 @@ def api_delete_submission(submission_id):
     return jsonify({'message': 'Submission deleted successfully'})
 
 if __name__ == "__main__":
-    port = int(os.getenv("PORT", 5000))
-    app.run(host='0.0.0.0', port=port, debug=False)
+    app.run(debug=True)
