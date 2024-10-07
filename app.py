@@ -1,5 +1,4 @@
 import os
-import sqlite3
 import uuid
 import base64
 from datetime import datetime
@@ -16,7 +15,6 @@ import requests
 import json
 import logging
 from database import init_db, insert_submission, get_submissions, get_submission_by_id, delete_submission, generate_app_id
-import psycopg2
 
 # Setup logging
 logging.basicConfig(level=logging.DEBUG)
@@ -24,6 +22,7 @@ logging.basicConfig(level=logging.DEBUG)
 # Load environment variables
 load_dotenv()
 
+# Flask app setup
 app = Flask(__name__)
 app.config['UPLOAD_FOLDER'] = 'uploads'
 app.config['ALLOWED_EXTENSIONS'] = {'pdf'}
@@ -33,6 +32,7 @@ app.secret_key = os.getenv('SECRET_KEY')
 # Initialize the database
 init_db()
 
+# Ensure the upload folder exists
 if not os.path.exists(app.config['UPLOAD_FOLDER']):
     os.makedirs(app.config['UPLOAD_FOLDER'])
 
