@@ -16,11 +16,13 @@ import requests
 import json
 import logging
 from database import init_db, insert_submission, get_submissions, get_submission_by_id, delete_submission, generate_app_id
+import psycopg2
 
 # Setup logging
 logging.basicConfig(level=logging.DEBUG)
 
-load_dotenv()  # Load environment variables from .env file
+# Load environment variables
+load_dotenv()
 
 app = Flask(__name__)
 app.config['UPLOAD_FOLDER'] = 'uploads'
@@ -28,14 +30,17 @@ app.config['ALLOWED_EXTENSIONS'] = {'pdf'}
 app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16 MB limit
 app.secret_key = os.getenv('SECRET_KEY')
 
-init_db()  # Initialize the database
+# Initialize the database
+init_db()
 
 if not os.path.exists(app.config['UPLOAD_FOLDER']):
     os.makedirs(app.config['UPLOAD_FOLDER'])
 
+
+# Helper function to check allowed file types
 def allowed_file(filename):
-    return '.' in filename and \
-           filename.rsplit('.', 1)[1].lower() in app.config['ALLOWED_EXTENSIONS']
+    return '.' in filename and filename.rsplit('.', 1)[1].lower() in app.config['ALLOWED_EXTENSIONS']
+
 
 def get_client_ip(request):
     if request.environ.get('HTTP_X_FORWARDED_FOR'):
@@ -44,13 +49,15 @@ def get_client_ip(request):
         ip = request.environ['REMOTE_ADDR']
     return ip
 
+
 def get_location(ip):
     try:
         response = requests.get(f'http://ip-api.com/json/{ip}')
         data = response.json()
         return f"{data['city']}, {data['regionName']}, {data['country']}"
-    except:
+    except Exception:
         return "Unknown Location"
+
 
 def format_date(date_str):
     try:
@@ -58,6 +65,7 @@ def format_date(date_str):
         return date_obj.strftime('%m/%d/%Y')
     except ValueError:
         return date_str
+
 
 @app.route('/uploads/<filename>')
 def uploaded_file(filename):
@@ -69,6 +77,8 @@ def uploaded_file(filename):
         flash('The requested file is either missing or empty.')
         return redirect(url_for('form'))
 
+
+# Function to create the PDF
 def create_pdf(data, files, submission_time, browser, ip_address, unique_id, location, app_id):
     pdf = FPDF()
     pdf.add_page()
@@ -153,6 +163,7 @@ def create_pdf(data, files, submission_time, browser, ip_address, unique_id, loc
         logging.error(f"Failed to generate PDF {pdf_filename}. File is missing or empty.")
         raise ValueError("Generated PDF is empty or not created.")
 
+
 @app.route('/submit_form', methods=['POST'])
 def submit_form():
     form_data = request.form.to_dict()
@@ -163,8 +174,8 @@ def submit_form():
         for file in files:
             if file and allowed_file(file.filename):
                 file.seek(0, os.SEEK_END)  # Move the cursor to the end of the file
-                file_length = file.tell()  # Get the current cursor position which is the size of the file
-                file.seek(0, os.SEEK_SET)  # Move the cursor back to the start of the file
+                file_length = file.tell()  # Get the current cursor position (size)
+                file.seek(0, os.SEEK_SET)  # Move the cursor back to the start
 
                 if file_length > 0:
                     filename = secure_filename(file.filename)
@@ -245,6 +256,7 @@ def submit_form():
 
     return render_template('congratulation.html')
 
+
 def send_borrower_email(to_email, subject, html_content):
     sender_email = os.getenv('SENDER_EMAIL')
     sender_password = os.getenv('SENDER_PASSWORD')
@@ -262,35 +274,42 @@ def send_borrower_email(to_email, subject, html_content):
     except Exception as e:
         logging.error(f"Failed to send email to {to_email}: {e}")
 
+
 @app.route('/')
 @app.route('/index')
 @app.route('/index.html')
 def index():
     return render_template('index.html')
 
+
 @app.route('/form')
 @app.route('/form.html')
 def form():
     return render_template('form.html')
 
+
 @app.route('/congratulation.html')
 def congratulation():
     return render_template('congratulation.html')
+
 
 @app.route("/contact")
 @app.route("/contact.html")
 def contact():
     return render_template("contact.html")
 
+
 @app.route("/question")
 @app.route("/question.html")
 def questions():
     return render_template("question.html")
 
+
 @app.route("/about")
 @app.route("/about.html")
 def about():
     return render_template("about.html")
+
 
 @app.route('/send_email', methods=['POST'])
 def send_email():
@@ -319,19 +338,23 @@ def send_email():
         flash('Failed to send message. Please try again later.')
     return redirect(url_for('email_sent'))
 
+
 @app.route('/email_sent.html')
 def email_sent():
     return render_template('email_sent.html')
+
 
 @app.route('/dashboard.html')
 @app.route('/dashboard')
 def dashboard():
     return render_template('dashboard.html')
 
+
 @app.route('/api/submissions', methods=['GET'])
 def api_submissions():
     submissions = get_submissions()
     return jsonify({'submissions': [{'id': s[0], 'app_id': s[1], 'data': s[2], 'submission_time': s[3]} for s in submissions]})
+
 
 @app.route('/api/submissions/<int:submission_id>', methods=['GET'])
 def api_submission(submission_id):
@@ -341,16 +364,18 @@ def api_submission(submission_id):
         return jsonify({'id': submission[0], 
                         'app_id': submission[1], 
                         'business_type': data.get('business_type'),  
-                        'signature': data.get('signature'),  # Include the signature data
+                        'signature': data.get('signature'),  
                         'data': submission[2], 
                         'submission_time': submission[3]})
     else:
         return jsonify({'error': 'Submission not found'}), 404
 
+
 @app.route('/api/submissions/<int:submission_id>', methods=['DELETE'])
 def api_delete_submission(submission_id):
     delete_submission(submission_id)
     return jsonify({'message': 'Submission deleted successfully'})
+
 
 if __name__ == "__main__":
     app.run(debug=True)
