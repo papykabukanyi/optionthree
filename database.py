@@ -53,7 +53,7 @@ def insert_submission(app_id, data, submission_time):
     cursor.execute('''
         INSERT INTO submissions (app_id, data, submission_time)
         VALUES (%s, %s, %s)
-    ''', (app_id, json.dumps(data), submission_time))
+    ''', (app_id, json.dumps(data), submission_time))  # Convert dictionary to JSON string for storage
     conn.commit()
     cursor.close()
     conn.close()
@@ -66,6 +66,13 @@ def get_submissions():
     submissions = cursor.fetchall()
     cursor.close()
     conn.close()
+
+    # Only apply json.loads if the data is a string, otherwise it's already a dictionary
+    submissions = [
+        (s[0], s[1], s[2] if isinstance(s[2], dict) else json.loads(s[2]), s[3]) 
+        for s in submissions
+    ]
+    
     return submissions
 
 
@@ -76,6 +83,16 @@ def get_submission_by_id(submission_id):
     submission = cursor.fetchone()
     cursor.close()
     conn.close()
+
+    if submission:
+        # Only apply json.loads if the data is a string
+        submission = (
+            submission[0],
+            submission[1],
+            submission[2] if isinstance(submission[2], dict) else json.loads(submission[2]),
+            submission[3]
+        )
+    
     return submission
 
 
@@ -95,7 +112,7 @@ def update_submission(submission_id, data):
         UPDATE submissions
         SET data = %s
         WHERE id = %s
-    ''', (json.dumps(data), submission_id))
+    ''', (json.dumps(data), submission_id))  # Convert dictionary to JSON string for storage
     conn.commit()
     cursor.close()
     conn.close()

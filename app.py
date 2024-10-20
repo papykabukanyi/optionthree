@@ -11,7 +11,6 @@ from email.mime.text import MIMEText
 from email.mime.base import MIMEBase
 from email import encoders
 from dotenv import load_dotenv
-import requests
 import json
 import logging
 from database import init_db, insert_submission, get_submissions, get_submission_by_id, delete_submission, generate_app_id
@@ -24,7 +23,7 @@ load_dotenv()
 
 # Flask app setup
 app = Flask(__name__)
-app.config['UPLOAD_FOLDER'] = 'uploads'
+app.config['UPLOAD_FOLDER'] = os.path.join(os.getcwd(), 'uploads')
 app.config['ALLOWED_EXTENSIONS'] = {'pdf'}
 app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16 MB limit
 app.secret_key = os.getenv('SECRET_KEY')
@@ -67,15 +66,15 @@ def format_date(date_str):
         return date_str
 
 
+# Route to serve uploaded files
 @app.route('/uploads/<filename>')
 def uploaded_file(filename):
     file_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
-    if os.path.exists(file_path) and os.path.getsize(file_path) > 0:
+    if os.path.exists(file_path):
         return send_from_directory(app.config['UPLOAD_FOLDER'], filename)
     else:
-        logging.error(f"File {filename} not found or is empty.")
-        flash('The requested file is either missing or empty.')
-        return redirect(url_for('form'))
+        logging.error(f"File not found: {file_path}")
+        return "File not found", 404
 
 
 # Function to create the PDF
@@ -137,7 +136,6 @@ def create_pdf(data, files, submission_time, browser, ip_address, unique_id, loc
     pdf.cell(0, 5, txt=f"IP Address: {ip_address}", ln=True)
     pdf.cell(0, 5, txt=f"Unique ID: {unique_id}", ln=True)
     pdf.cell(0, 5, txt=f"Location: {location}", ln=True)
-    pdf.cell(0, 5, txt=f"Application ID: {app_id}", ln=True)
 
     # Decode and save signature
     signature_data = data.get('signature', '').split(',')[1]
@@ -173,23 +171,11 @@ def submit_form():
     try:
         for file in files:
             if file and allowed_file(file.filename):
-                file.seek(0, os.SEEK_END)  # Move the cursor to the end of the file
-                file_length = file.tell()  # Get the current cursor position (size)
-                file.seek(0, os.SEEK_SET)  # Move the cursor back to the start
+                filename = secure_filename(file.filename)
+                file_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+                file.save(file_path)  # Save the file in uploads folder
+                uploaded_files.append(file_path)
 
-                if file_length > 0:
-                    filename = secure_filename(file.filename)
-                    file_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
-                    file.save(file_path)
-                    uploaded_files.append(file_path)
-                else:
-                    logging.warning(f"Uploaded file {file.filename} is empty (size: {file_length} bytes).")
-                    flash('One of the uploaded files is empty. Please ensure the file is not empty before uploading.')
-                    return redirect(url_for('form'))
-            else:
-                logging.warning(f"File {file.filename} is not allowed or was not uploaded correctly.")
-
-        # Continue processing if file uploads are successful
         submission_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         browser = request.user_agent.string
         ip_address = get_client_ip(request)
@@ -197,8 +183,9 @@ def submit_form():
         location = get_location(ip_address)
         app_id = generate_app_id()
 
+        # Create a PDF for the submission
         pdf_filename = create_pdf(form_data, uploaded_files, submission_time, browser, ip_address, unique_id, location, app_id)
-        
+
         form_data['uploaded_files'] = [os.path.basename(file) for file in uploaded_files]
         form_data['pdf_filename'] = os.path.basename(pdf_filename)
         form_data['app_id'] = app_id
@@ -210,69 +197,12 @@ def submit_form():
 
         insert_submission(app_id, form_data, submission_time)
 
-        borrower_email = form_data.get('borrower_email')
-        borrower_name = f"{form_data.get('borrower_first_name', '')} {form_data.get('borrower_last_name', '')}"
-        email_template = render_template('borrower_email_template.html', borrower_name=borrower_name, app_id=app_id, business_type=form_data.get('business_type', ''))
-
-        send_borrower_email(borrower_email, "Application Submitted", email_template)
-
-        sender_email = os.getenv('SENDER_EMAIL')
-        receiver_emails = [os.getenv('RECEIVER_EMAIL_1'), os.getenv('RECEIVER_EMAIL_2')]
-        password = os.getenv('SENDER_PASSWORD')
-        msg = MIMEMultipart()
-        msg['From'] = sender_email
-        msg['To'] = ", ".join(receiver_emails)
-        msg['Subject'] = "You Have a New Application!"
-        body = "Please find the attached form submission and supporting documents."
-        msg.attach(MIMEText(body, 'plain'))
-
-        # Attach the generated PDF
-        with open(pdf_filename, "rb") as attachment:
-            part = MIMEBase('application', 'octet-stream')
-            part.set_payload(attachment.read())
-            encoders.encode_base64(part)
-            part.add_header('Content-Disposition', f"attachment; filename= {os.path.basename(pdf_filename)}")
-            msg.attach(part)
-
-        # Attach uploaded files
-        for file_path in uploaded_files:
-            with open(file_path, "rb") as attachment:
-                part = MIMEBase('application', 'octet-stream')
-                part.set_payload(attachment.read())
-                encoders.encode_base64(part)
-                part.add_header('Content-Disposition', f"attachment; filename= {os.path.basename(file_path)}")
-                msg.attach(part)
-
-        server = smtplib.SMTP('smtp.gmail.com', 587)
-        server.starttls()
-        server.login(sender_email, password)
-        server.sendmail(sender_email, receiver_emails, msg.as_string())
-        server.quit()
-
     except Exception as e:
-        logging.error(f"Error occurred during form submission: {e}")
-        flash('An error occurred while processing your submission. Please try again.')
+        logging.error(f"Error during form submission: {e}")
+        flash('An error occurred while processing your submission.')
         return redirect(url_for('form'))
 
     return render_template('congratulation.html')
-
-
-def send_borrower_email(to_email, subject, html_content):
-    sender_email = os.getenv('SENDER_EMAIL')
-    sender_password = os.getenv('SENDER_PASSWORD')
-    msg = MIMEMultipart()
-    msg['From'] = sender_email
-    msg['To'] = to_email
-    msg['Subject'] = subject
-    msg.attach(MIMEText(html_content, 'html'))
-    try:
-        server = smtplib.SMTP('smtp.gmail.com', 587)
-        server.starttls()
-        server.login(sender_email, sender_password)
-        server.sendmail(sender_email, to_email, msg.as_string())
-        server.quit()
-    except Exception as e:
-        logging.error(f"Failed to send email to {to_email}: {e}")
 
 
 @app.route('/')
@@ -288,89 +218,37 @@ def form():
     return render_template('form.html')
 
 
-@app.route('/congratulation.html')
-def congratulation():
-    return render_template('congratulation.html')
-
-
-@app.route("/contact")
-@app.route("/contact.html")
-def contact():
-    return render_template("contact.html")
-
-
-@app.route("/question")
-@app.route("/question.html")
-def questions():
-    return render_template("question.html")
-
-
-@app.route("/about")
-@app.route("/about.html")
-def about():
-    return render_template("about.html")
-
-
-@app.route('/send_email', methods=['POST'])
-def send_email():
-    full_name = request.form['full_name']
-    email = request.form['email']
-    phone_number = request.form['phone_number']
-    message = request.form['message']
-    sender_email = os.getenv('SENDER_EMAIL')
-    sender_password = os.getenv('SENDER_PASSWORD')
-    receiver_emails = [os.getenv('RECEIVER_EMAIL_1'), os.getenv('RECEIVER_EMAIL_2')]
-    msg = MIMEMultipart()
-    msg['From'] = sender_email
-    msg['To'] = ", ".join(receiver_emails)
-    msg['Subject'] = "New Contact Form Submission"
-    body = f"Name: {full_name}\nEmail: {email}\nPhone: {phone_number}\nMessage: {message}"
-    msg.attach(MIMEText(body, 'plain'))
-    try:
-        server = smtplib.SMTP('smtp.gmail.com', 587)
-        server.starttls()
-        server.login(sender_email, sender_password)
-        server.sendmail(sender_email, receiver_emails, msg.as_string())
-        server.quit()
-        flash('Message sent successfully!')
-    except Exception as e:
-        logging.error(f"Failed to send contact email: {e}")
-        flash('Failed to send message. Please try again later.')
-    return redirect(url_for('email_sent'))
-
-
-@app.route('/email_sent.html')
-def email_sent():
-    return render_template('email_sent.html')
-
-
-@app.route('/dashboard.html')
 @app.route('/dashboard')
+@app.route('/dashboard.html')
 def dashboard():
-    return render_template('dashboard.html')
+    submissions = get_submissions()
+    return render_template('dashboard.html', submissions=submissions)
 
 
+# API route to get all submissions
 @app.route('/api/submissions', methods=['GET'])
 def api_submissions():
     submissions = get_submissions()
     return jsonify({'submissions': [{'id': s[0], 'app_id': s[1], 'data': s[2], 'submission_time': s[3]} for s in submissions]})
 
 
+# API route to get a single submission by ID
 @app.route('/api/submissions/<int:submission_id>', methods=['GET'])
 def api_submission(submission_id):
     submission = get_submission_by_id(submission_id)
     if submission:
         data = json.loads(submission[2])
-        return jsonify({'id': submission[0], 
-                        'app_id': submission[1], 
-                        'business_type': data.get('business_type'),  
-                        'signature': data.get('signature'),  
-                        'data': submission[2], 
-                        'submission_time': submission[3]})
+        return jsonify({
+            'id': submission[0], 
+            'app_id': submission[1], 
+            'data': submission[2], 
+            'submission_time': submission[3]
+        })
     else:
         return jsonify({'error': 'Submission not found'}), 404
 
 
+# API route to delete a submission by ID
 @app.route('/api/submissions/<int:submission_id>', methods=['DELETE'])
 def api_delete_submission(submission_id):
     delete_submission(submission_id)
