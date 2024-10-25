@@ -11,9 +11,8 @@ from email.mime.text import MIMEText
 from email.mime.base import MIMEBase
 from email import encoders
 from dotenv import load_dotenv
-import json
 import logging
-from database import init_db, insert_submission, get_submissions, get_submission_by_id, delete_submission, generate_app_id
+from database import init_db, insert_submission, get_submissions, delete_submission, generate_app_id
 
 # Setup logging
 logging.basicConfig(level=logging.DEBUG)
@@ -24,7 +23,6 @@ load_dotenv()
 # Flask app setup
 app = Flask(__name__)
 app.config['UPLOAD_FOLDER'] = os.path.join(os.getcwd(), 'uploads')
-app.config['ALLOWED_EXTENSIONS'] = {'pdf'}
 app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16 MB limit
 app.secret_key = os.getenv('SECRET_KEY')
 
@@ -35,47 +33,37 @@ init_db()
 if not os.path.exists(app.config['UPLOAD_FOLDER']):
     os.makedirs(app.config['UPLOAD_FOLDER'])
 
-
-# Helper function to check allowed file types
+# Allow any file type for uploads
 def allowed_file(filename):
-    return '.' in filename and filename.rsplit('.', 1)[1].lower() in app.config['ALLOWED_EXTENSIONS']
+    return '.' in filename
 
+# Helper function to send emails
+def send_email(to_email, subject, html_content, attachments=[]):
+    sender_email = os.getenv('SENDER_EMAIL')
+    sender_password = os.getenv('SENDER_PASSWORD')
+    msg = MIMEMultipart()
+    msg['From'] = sender_email
+    msg['To'] = to_email
+    msg['Subject'] = subject
+    msg.attach(MIMEText(html_content, 'html'))
 
-def get_client_ip(request):
-    if request.environ.get('HTTP_X_FORWARDED_FOR'):
-        ip = request.environ['HTTP_X_FORWARDED_FOR']
-    else:
-        ip = request.environ['REMOTE_ADDR']
-    return ip
+    # Attach files
+    for attachment in attachments:
+        with open(attachment, "rb") as f:
+            part = MIMEBase("application", "octet-stream")
+            part.set_payload(f.read())
+            encoders.encode_base64(part)
+            part.add_header("Content-Disposition", f"attachment; filename={os.path.basename(attachment)}")
+            msg.attach(part)
 
-
-def get_location(ip):
     try:
-        response = requests.get(f'http://ip-api.com/json/{ip}')
-        data = response.json()
-        return f"{data['city']}, {data['regionName']}, {data['country']}"
-    except Exception:
-        return "Unknown Location"
-
-
-def format_date(date_str):
-    try:
-        date_obj = datetime.strptime(date_str, '%Y-%m-%d')
-        return date_obj.strftime('%m/%d/%Y')
-    except ValueError:
-        return date_str
-
-
-# Route to serve uploaded files
-@app.route('/uploads/<filename>')
-def uploaded_file(filename):
-    file_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
-    if os.path.exists(file_path):
-        return send_from_directory(app.config['UPLOAD_FOLDER'], filename)
-    else:
-        logging.error(f"File not found: {file_path}")
-        return "File not found", 404
-
+        server = smtplib.SMTP('smtp.gmail.com', 587)
+        server.starttls()
+        server.login(sender_email, sender_password)
+        server.sendmail(sender_email, to_email, msg.as_string())
+        server.quit()
+    except Exception as e:
+        logging.error(f"Failed to send email: {e}")
 
 # Function to create the PDF
 def create_pdf(data, files, submission_time, browser, ip_address, unique_id, location, app_id):
@@ -83,7 +71,6 @@ def create_pdf(data, files, submission_time, browser, ip_address, unique_id, loc
     pdf.add_page()
     pdf.set_font("Arial", size=12)
     pdf.image('static/assets/img/Logo.png', 10, 8, 33)
-    pdf.image('static/assets/img/clients/hil.png', 170, 8, 33)
     pdf.ln(15)
     pdf.set_font("Arial", 'B', 14)
     pdf.cell(0, 10, txt="Business Information", ln=True)
@@ -96,11 +83,13 @@ def create_pdf(data, files, submission_time, browser, ip_address, unique_id, loc
     pdf.cell(0, 5, txt=f"EIN / TAX ID Number: {data.get('ein', '')}", ln=True)
     pdf.cell(0, 5, txt=f"Type of Business: {data.get('business_type', '')}", ln=True)
     pdf.ln(2)
+
+    # Borrower Information
     pdf.set_font("Arial", 'B', 14)
     pdf.cell(0, 10, txt="Borrower Information", ln=True)
     pdf.set_font("Arial", size=10)
-    pdf.cell(0, 5, txt=f"Name: {data.get('borrower_first_name', '')} {data.get('borrower_last_name', '')}", ln=True)
-    pdf.cell(0, 5, txt=f"Date of Birth: {format_date(data.get('borrower_dob', ''))}", ln=True)
+    pdf.cell(0, 5, txt=f"Borrower Name: {data.get('borrower_first_name', '')} {data.get('borrower_last_name', '')}", ln=True)
+    pdf.cell(0, 5, txt=f"Date of Birth: {data.get('borrower_dob', '')}", ln=True)
     pdf.cell(0, 5, txt=f"Percent Ownership: {data.get('borrower_ownership', '')}", ln=True)
     pdf.cell(0, 5, txt=f"SSN: {data.get('borrower_ssn', '')}", ln=True)
     pdf.cell(0, 5, txt=f"Phone: {data.get('borrower_phone', '')}", ln=True)
@@ -108,60 +97,75 @@ def create_pdf(data, files, submission_time, browser, ip_address, unique_id, loc
     pdf.cell(0, 5, txt=f"Preferred Method of Contact: {data.get('borrower_preferred_contact', '')}", ln=True)
     pdf.cell(0, 5, txt=f"Address: {data.get('borrower_address_line_1', '')}, {data.get('borrower_city', '')}, {data.get('borrower_state', '')} {data.get('borrower_zip_code', '')}", ln=True)
     pdf.ln(2)
+
+    # Co-Applicant Information
     pdf.set_font("Arial", 'B', 14)
     pdf.cell(0, 10, txt="Co-Applicant Information", ln=True)
     pdf.set_font("Arial", size=10)
     pdf.cell(0, 5, txt=f"Name: {data.get('coapplicant_first_name', '')} {data.get('coapplicant_last_name', '')}", ln=True)
-    pdf.cell(0, 5, txt=f"Date of Birth: {format_date(data.get('coapplicant_dob', ''))}", ln=True)
+    pdf.cell(0, 5, txt=f"Date of Birth: {data.get('coapplicant_dob', '')}", ln=True)
     pdf.cell(0, 5, txt=f"Percent Ownership: {data.get('coapplicant_ownership', '')}", ln=True)
     pdf.cell(0, 5, txt=f"SSN: {data.get('coapplicant_ssn', '')}", ln=True)
     pdf.cell(0, 5, txt=f"Phone: {data.get('coapplicant_phone', '')}", ln=True)
     pdf.cell(0, 5, txt=f"Email: {data.get('coapplicant_email', '')}", ln=True)
-    pdf.cell(0, 5, txt=f"Preferred Method of Contact: {data.get('coapplicant_preferred_contact', '')}", ln=True)
     pdf.cell(0, 5, txt=f"Address: {data.get('coapplicant_address_line_1', '')}, {data.get('coapplicant_city', '')}, {data.get('coapplicant_state', '')} {data.get('coapplicant_zip_code', '')}", ln=True)
     pdf.ln(2)
+
+    # Loan Request Information
     pdf.set_font("Arial", 'B', 14)
     pdf.cell(0, 10, txt="Loan Request Information", ln=True)
     pdf.set_font("Arial", size=10)
-    pdf.cell(0, 5, txt=f"Amount of Equipments: {data.get('loan_amount', '')}", ln=True)
-    pdf.cell(0, 5, txt=f"Max Down Payments: {data.get('max_down_payment', '')}", ln=True)
+    pdf.cell(0, 5, txt=f"Loan Amount: {data.get('loan_amount', '')}", ln=True)
+    pdf.cell(0, 5, txt=f"Max Down Payment: {data.get('max_down_payment', '')}", ln=True)
     pdf.cell(0, 5, txt=f"Equipment & Seller Info: {data.get('equipment_seller_info', '')}", ln=True)
     pdf.ln(2)
-    pdf.set_font("Arial", 'B', 14)
-    pdf.cell(0, 10, txt="Signature", ln=True)
-    pdf.set_font("Arial", size=10)
-    pdf.cell(0, 5, txt=f"Borrower Name: {data.get('borrower_first_name', '')} {data.get('borrower_last_name', '')}", ln=True)
-    pdf.cell(0, 5, txt=f"Submission Time: {submission_time}", ln=True)
-    pdf.cell(0, 5, txt=f"Browser: {browser}", ln=True)
-    pdf.cell(0, 5, txt=f"IP Address: {ip_address}", ln=True)
-    pdf.cell(0, 5, txt=f"Unique ID: {unique_id}", ln=True)
-    pdf.cell(0, 5, txt=f"Location: {location}", ln=True)
 
-    # Decode and save signature
-    signature_data = data.get('signature', '').split(',')[1]
-    signature_path = os.path.join(app.config['UPLOAD_FOLDER'], f"{app_id}_signature.png")
-    with open(signature_path, "wb") as fh:
-        fh.write(base64.b64decode(signature_data))
-    
-    pdf.image(signature_path, 10, pdf.get_y() + 10, 60)  # Adjust as needed
-    pdf.ln(20)
-    
+    # Additional Information (Browser, IP Address, etc.)
     pdf.set_font("Arial", 'B', 14)
-    pdf.cell(0, 10, txt="Attached Files", ln=True)
+    pdf.cell(0, 10, txt="Additional Information", ln=True)
     pdf.set_font("Arial", size=10)
-    for file in files:
-        pdf.cell(0, 6, txt=f"File: {os.path.basename(file)}", ln=True)
+    pdf.cell(0, 5, txt=f"Browser: {browser or 'N/A'}", ln=True)
+    pdf.cell(0, 5, txt=f"IP Address: {ip_address or 'N/A'}", ln=True)
+    pdf.cell(0, 5, txt=f"Unique ID: {unique_id or 'N/A'}", ln=True)
+    pdf.cell(0, 5, txt=f"Location: {location or 'N/A'}", ln=True)
+    pdf.ln(2)
+
+    # Signature (if available)
+    if 'signature' in data:
+        signature_data = data.get('signature', '').split(',')[1]
+        signature_path = os.path.join(app.config['UPLOAD_FOLDER'], f"{app_id}_signature.png")
+        with open(signature_path, "wb") as fh:
+            fh.write(base64.b64decode(signature_data))
+        pdf.cell(0, 10, txt="Signature:", ln=True)
+        pdf.image(signature_path, 10, pdf.get_y() + 10, 60)
+        pdf.ln(20)
+
+    # Attached Files
+    if files:
+        pdf.cell(0, 10, txt="Uploaded Files:", ln=True)
+        for file in files:
+            pdf.cell(0, 5, txt=os.path.basename(file), ln=True)
+
     pdf_filename = os.path.join(app.config['UPLOAD_FOLDER'], f"{app_id}.pdf")
     pdf.output(pdf_filename)
 
     if os.path.exists(pdf_filename) and os.path.getsize(pdf_filename) > 0:
-        logging.info(f"PDF {pdf_filename} generated successfully.")
         return pdf_filename
     else:
-        logging.error(f"Failed to generate PDF {pdf_filename}. File is missing or empty.")
-        raise ValueError("Generated PDF is empty or not created.")
+        logging.error(f"Failed to generate PDF {pdf_filename}")
+        return None
 
+# Route to delete a submission from the database
+@app.route('/api/submissions/<int:submission_id>', methods=['DELETE'])
+def api_delete_submission(submission_id):
+    try:
+        delete_submission(submission_id)  # This will delete the submission from the database
+        return jsonify({'message': 'Submission deleted successfully'}), 200
+    except Exception as e:
+        logging.error(f"Error deleting submission: {e}")
+        return jsonify({'error': 'Failed to delete submission'}), 500
 
+# Form submission route
 @app.route('/submit_form', methods=['POST'])
 def submit_form():
     form_data = request.form.to_dict()
@@ -173,37 +177,41 @@ def submit_form():
             if file and allowed_file(file.filename):
                 filename = secure_filename(file.filename)
                 file_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
-                file.save(file_path)  # Save the file in uploads folder
+                file.save(file_path)
                 uploaded_files.append(file_path)
 
         submission_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         browser = request.user_agent.string
-        ip_address = get_client_ip(request)
-        unique_id = str(uuid.uuid4())
-        location = get_location(ip_address)
+        ip_address = request.remote_addr
         app_id = generate_app_id()
 
-        # Create a PDF for the submission
-        pdf_filename = create_pdf(form_data, uploaded_files, submission_time, browser, ip_address, unique_id, location, app_id)
-
+        # Create PDF
+        pdf_filename = create_pdf(form_data, uploaded_files, submission_time, browser, ip_address, str(uuid.uuid4()), 'Unknown', app_id)
         form_data['uploaded_files'] = [os.path.basename(file) for file in uploaded_files]
         form_data['pdf_filename'] = os.path.basename(pdf_filename)
         form_data['app_id'] = app_id
-        form_data['submission_time'] = submission_time
-        form_data['browser'] = browser
-        form_data['ip_address'] = ip_address
-        form_data['unique_id'] = unique_id
-        form_data['location'] = location
 
+        # Save to database
         insert_submission(app_id, form_data, submission_time)
+
+        # Send email to borrower
+        borrower_email = form_data.get('borrower_email')
+        if borrower_email:
+            borrower_email_template = render_template('borrower_email_template.html', borrower_name=form_data.get('borrower_first_name'), app_id=app_id)
+            send_email(borrower_email, "Application Submitted", borrower_email_template)
+
+        # Send email to admin with attachments
+        admin_emails = [os.getenv('RECEIVER_EMAIL_1'), os.getenv('RECEIVER_EMAIL_2')]
+        for admin_email in admin_emails:
+            send_email(admin_email, "New Application Submitted", "A new application has been submitted.", [pdf_filename] + uploaded_files)
+
+        flash('Form submitted successfully!')
+        return redirect(url_for('congratulation'))
 
     except Exception as e:
         logging.error(f"Error during form submission: {e}")
         flash('An error occurred while processing your submission.')
         return redirect(url_for('form'))
-
-    return render_template('congratulation.html')
-
 
 @app.route('/')
 @app.route('/index')
@@ -218,42 +226,73 @@ def form():
     return render_template('form.html')
 
 
+@app.route("/contact")
+@app.route("/contact.html")
+def contact():
+    return render_template("contact.html")
+
+
+@app.route("/question")
+@app.route("/question.html")
+def questions():
+    return render_template("question.html")
+
+
+@app.route("/about")
+@app.route("/about.html")
+def about():
+    return render_template("about.html")
+
+
+@app.route('/send_email', methods=['POST'])
+def send_email_route():
+    full_name = request.form['full_name']
+    email = request.form['email']
+    phone_number = request.form['phone_number']
+    message = request.form['message']
+    sender_email = os.getenv('SENDER_EMAIL')
+    sender_password = os.getenv('SENDER_PASSWORD')
+    receiver_emails = [os.getenv('RECEIVER_EMAIL_1'), os.getenv('RECEIVER_EMAIL_2')]
+    msg = MIMEMultipart()
+    msg['From'] = sender_email
+    msg['To'] = ", ".join(receiver_emails)
+    msg['Subject'] = "New Contact Form Submission"
+    body = f"Name: {full_name}\nEmail: {email}\nPhone: {phone_number}\nMessage: {message}"
+    msg.attach(MIMEText(body, 'plain'))
+    try:
+        server = smtplib.SMTP('smtp.gmail.com', 587)
+        server.starttls()
+        server.login(sender_email, sender_password)
+        server.sendmail(sender_email, receiver_emails, msg.as_string())
+        server.quit()
+        flash('Message sent successfully!')
+    except Exception as e:
+        logging.error(f"Failed to send contact email: {e}")
+        flash('Failed to send message. Please try again later.')
+    return redirect(url_for('email_sent'))
+
+
+@app.route('/email_sent.html')
+def email_sent():
+    return render_template('email_sent.html')
+
+@app.route('/congratulation')
+def congratulation():
+    return render_template('congratulation.html')
+
+@app.route('/uploads/<filename>')
+def uploaded_file(filename):
+    return send_from_directory(app.config['UPLOAD_FOLDER'], filename)
+
 @app.route('/dashboard')
-@app.route('/dashboard.html')
 def dashboard():
-    submissions = get_submissions()
-    return render_template('dashboard.html', submissions=submissions)
-
-
-# API route to get all submissions
-@app.route('/api/submissions', methods=['GET'])
-def api_submissions():
-    submissions = get_submissions()
-    return jsonify({'submissions': [{'id': s[0], 'app_id': s[1], 'data': s[2], 'submission_time': s[3]} for s in submissions]})
-
-
-# API route to get a single submission by ID
-@app.route('/api/submissions/<int:submission_id>', methods=['GET'])
-def api_submission(submission_id):
-    submission = get_submission_by_id(submission_id)
-    if submission:
-        data = json.loads(submission[2])
-        return jsonify({
-            'id': submission[0], 
-            'app_id': submission[1], 
-            'data': submission[2], 
-            'submission_time': submission[3]
-        })
-    else:
-        return jsonify({'error': 'Submission not found'}), 404
-
-
-# API route to delete a submission by ID
-@app.route('/api/submissions/<int:submission_id>', methods=['DELETE'])
-def api_delete_submission(submission_id):
-    delete_submission(submission_id)
-    return jsonify({'message': 'Submission deleted successfully'})
-
+    try:
+        submissions = get_submissions()
+        return render_template('dashboard.html', submissions=submissions)
+    except Exception as e:
+        logging.error(f"Error loading dashboard: {e}")
+        flash('Failed to load dashboard data.')
+        return redirect(url_for('index'))
 
 if __name__ == "__main__":
     app.run(debug=True)
