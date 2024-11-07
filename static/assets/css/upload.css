@@ -1,0 +1,86 @@
+.file-upload {
+    margin-top: 20px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.file-upload input[type="file"] {
+    display: none;
+}
+
+.file-upload label {
+    background-color: #f7f7f7;
+    border: 2px solid #ddd;
+    padding: 10px 20px;
+    cursor: pointer;
+    transition: background-color 0.3s, border-color 0.3s;
+    font-size: 16px;
+    color: #333;
+    border-radius: 5px;
+}
+
+.file-upload label:hover {
+    background-color: #e7e7e7;
+    border-color: #ccc;
+}
+
+.file-list {
+    margin-top: 10px;
+    list-style-type: none;
+    padding: 0;
+}
+
+.file-list li {
+    margin: 5px 0;
+    padding: 5px;
+    border: 1px solid #ddd;
+    border-radius: 3px;
+    font-size: 14px;
+    color: #555;
+    background-color: #fafafa;
+}
+
+.add-file-btn {
+    margin-top: 10px;
+    background-color: #4CAF50;
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    font-size: 16px;
+    cursor: pointer;
+    border-radius: 5px;
+}
+
+.add-file-btn:hover {
+    background-color: #45a049;
+}
+
+.signature-pad-container {
+    text-align: left;
+    margin-top: 30px;
+}
+
+.signature-pad {
+    border: 6px solid #ddd;
+    border-radius: 20px;
+    width: 106%;
+    max-width: 270px;
+    height: 86px;
+    margin: 0 auto;
+}
+
+#clear-signature {
+    margin-top: 10px;
+    background-color: #000000;
+    color: white;
+    border: none;
+    padding: 7px 7px;
+    font-size: 12px;
+    cursor: pointer;
+    border-radius: 5px;
+}
+
+#clear-signature:hover {
+    background-color: #e60000;
+}

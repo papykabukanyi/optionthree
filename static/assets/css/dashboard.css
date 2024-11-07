@@ -1,0 +1,318 @@
+/* Dashboard Body Styling */
+body {
+    font-size: 80%;
+    background-color: #f8f9fa;
+}
+
+body.dark-mode {
+    background-color: #121212;
+    color: #e0e0e0;
+}
+
+/* Navbar Styling */
+.navbar {
+    display: flex;
+    justify-content: space-between;
+    padding: 10px;
+    background-color: #343a40;
+    color: rgb(199, 199, 199);
+}
+
+body.dark-mode .navbar {
+    background-color: #1f1f1f;
+    color: #ffffff;
+}
+
+/* Container Styling */
+.container {
+    width: 100%;
+    max-width: 1200px;
+    margin: 20px auto;
+}
+
+/* DataTable Styling */
+table.dataTable {
+    color: #333;
+    background-color: #ffffff;
+    width: 100%;
+    table-layout: fixed;
+}
+
+body.dark-mode table.dataTable {
+    color: #e0e0e0;
+    background-color: #222222;
+}
+
+table.dataTable th,
+table.dataTable td {
+    white-space: nowrap;
+    text-align: left;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+body.dark-mode table.dataTable th,
+body.dark-mode table.dataTable td {
+    background-color: #222222;
+    color: #e0e0e0;
+}
+
+/* DataTable Row Hover Effect */
+table.dataTable tbody tr:hover {
+    background-color: #e9e9e9;
+}
+
+body.dark-mode table.dataTable tbody tr:hover {
+    background-color: #333333;
+}
+
+/* Pagination and Search Bar Labels */
+.dataTables_length label,
+.dataTables_filter label {
+    color: #555555;
+}
+
+body.dark-mode .dataTables_length label,
+body.dark-mode .dataTables_filter label {
+    color: #cccccc;
+}
+
+/* Search Input Field */
+.dataTables_filter input[type="search"] {
+    background-color: #ffffff;
+    color: #333333;
+    border: 1px solid #ced4da;
+    border-radius: 4px;
+    padding: 5px;
+}
+
+body.dark-mode .dataTables_filter input[type="search"] {
+    background-color: #2e2e2e;
+    color: #ffffff;
+    border: 1px solid #444;
+}
+
+/* Entries Dropdown */
+.dataTables_length select {
+    background-color: #ffffff;
+    color: #333333;
+    border: 1px solid #ced4da;
+    border-radius: 4px;
+}
+
+body.dark-mode .dataTables_length select {
+    background-color: #3a3a3a;
+    color: #ffffff;
+    border-color: #666;
+}
+
+/* Button Styles */
+.btn-view-details {
+    background-color: #626262;
+    color: white;
+    cursor: pointer;
+    border-radius: 5px;
+    font-size: 14px;
+    padding: 5px 10px;
+    border: none;
+}
+
+.btn-delete {
+    background-color: #dc3545;
+    color: white;
+    cursor: pointer;
+    border-radius: 5px;
+    font-size: 14px;
+    padding: 5px 10px;
+    margin-right: 5px;
+    border: none;
+}
+
+body.dark-mode .btn-view-details,
+body.dark-mode .btn-delete,
+body.dark-mode .btn-email,
+body.dark-mode .btn-send-note,
+body.dark-mode .btn-send-status {
+    background-color: #505050;
+    color: #ffffff;
+}
+
+/* Notes & Status Section Styling */
+.notes-section {
+    max-height: 200px;
+    overflow-y: auto;
+    overflow-x: hidden;
+    padding: 10px;
+    border: 1px solid #e1e1e1;
+    background-color: #f9f9f9;
+    border-radius: 5px;
+    margin-bottom: 12px;
+    font-size: 0.9em;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+    white-space: pre-wrap; /* Wraps long text without adding horizontal scroll */
+}
+
+/* Custom Slim Scrollbar Styling */
+.notes-section::-webkit-scrollbar {
+    width: 8px;
+}
+
+.notes-section::-webkit-scrollbar-thumb {
+    background-color: #888;
+    border-radius: 4px;
+}
+
+.notes-section::-webkit-scrollbar-thumb:hover {
+    background-color: #555;
+}
+
+body.dark-mode .notes-section {
+    background-color: #1a1a1a;
+    color: #e0e0e0;
+    border-color: #333;
+}
+
+body.dark-mode .notes-section::-webkit-scrollbar-thumb {
+    background-color: #444;
+}
+
+/* Textarea and Button Container Styling */
+.notes-container {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+}
+
+/* Textarea Styling */
+textarea {
+    width: 100%;
+    padding: 10px;
+    border-radius: 5px;
+    border: 1px solid #ced4da;
+    resize: vertical;
+    font-size: 0.9em;
+    margin-bottom: 8px;
+    background-color: #ffffff;
+    color: #333333;
+    max-width: 100%;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+    white-space: pre-wrap;
+}
+
+body.dark-mode textarea {
+    background-color: #2a2a2a;
+    color: #ffffff;
+    border-color: #444;
+}
+
+/* Save Note Button Styling */
+.btn-send-note {
+    background-color: #007bff;
+    color: white;
+    border: none;
+    padding: 10px;
+    cursor: pointer;
+    font-size: 0.9em;
+    border-radius: 5px;
+    text-align: center;
+    margin-top: -5px;
+}
+
+body.dark-mode .btn-send-note {
+    background-color: #505050;
+    color: #ffffff;
+}
+
+/* Status Select Styling */
+.status-select {
+    margin-right: 10px;
+    background-color: #ffffff;
+    color: #333333;
+    border: 1px solid #ced4da;
+    max-width: 100%;
+}
+
+body.dark-mode .status-select {
+    background-color: #333333;
+    color: #ffffff;
+    border-color: #555;
+}
+
+/* Signature Image Styling */
+.signature-image {
+    margin-top: 10px;
+    max-width: 100%;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+}
+
+body.dark-mode .signature-image {
+    border-color: #555;
+}
+
+/* Settings Icon */
+.settings-icon {
+    font-size: 1.5em;
+    cursor: pointer;
+    color: #c5c5c5;
+}
+
+body.dark-mode .settings-icon {
+    color: #e0e0e0;
+}
+
+.settings-container {
+    position: relative;
+}
+
+/* Theme Toggle Container */
+.theme-toggle {
+    position: absolute;
+    top: 30px;
+    right: 0;
+    background-color: #343a40;
+    border-radius: 5px;
+    padding: 5px;
+}
+
+body.dark-mode .theme-toggle {
+    background-color: #4a4a4a;
+}
+
+.theme-toggle .btn {
+    margin: 2px;
+}
+
+body.dark-mode .theme-toggle .btn {
+    background-color: #505050;
+    color: #e0e0e0;
+}
+
+/* Responsive Styling */
+@media (max-width: 768px) {
+    .container {
+        padding: 0 10px;
+    }
+    .btn-view-details, .btn-delete, .btn-email, .btn-send-note, .btn-send-status {
+        font-size: 12px;
+        padding: 5px 10px;
+    }
+    .navbar h1 {
+        font-size: 20px;
+    }
+}
+
+@media (max-width: 576px) {
+    .status-select {
+        width: 100%;
+        margin-bottom: 8px;
+    }
+    .btn-send-status {
+        width: 100%;
+    }
+    .notes-section, textarea {
+        font-size: 0.85em;
+    }
+}

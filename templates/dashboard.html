@@ -1,115 +1,29 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="apple-touch-icon" sizes="180x180" href="/static/assets/img/favicon_io/apple-touch-icon.png">
     <link rel="icon" type="image/png" sizes="32x32" href="/static/assets/img/favicon_io/favicon-32x32.png">
-    <link rel="icon" type="image/png" sizes="16x16" href="/static/assets/img/favicon_io/favicon-16x16.png">
     <link rel="manifest" href="/static/assets/img/favicon_io/site.webmanifest">
-    <title>GOAT Dashboard</title>
+    <title>GOAT Dashboard⚡</title>
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
     <link rel="stylesheet" href="https://cdn.datatables.net/1.11.5/css/jquery.dataTables.min.css">
-    <style>
-        body {
-            font-size: 80%;
-            background-color: #f8f9fa;
-        }
-
-        .navbar {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 10px;
-            background-color: #343a40;
-            color: rgb(199, 199, 199);
-        }
-
-        .navbar h1 {
-            margin: 0;
-            font-size: 24px;
-        }
-
-        .navbar h4 {
-            margin: 0;
-            padding-left: 10px;
-            font-size: 14px;
-        }
-
-        .container {
-            width: 100%;
-            max-width: 1200px;
-            margin: 20px auto;
-        }
-
-        table.dataTable th,
-        table.dataTable td {
-            white-space: nowrap;
-            text-align: left;
-        }
-
-        .btn-view-details {
-            background-color: #626262;
-            border: none;
-            padding: 5px 10px;
-            color: white;
-            cursor: pointer;
-            border-radius: 5px;
-            font-size: 14px;
-        }
-
-        .btn-delete {
-            background-color: #dc3545;
-            border: none;
-            padding: 5px 10px;
-            color: white;
-            cursor: pointer;
-            border-radius: 5px;
-            font-size: 14px;
-            margin-right: 5px;
-        }
-
-        .btn-email {
-            background-color: #28a745;
-            border: none;
-            padding: 5px 10px;
-            color: white;
-            cursor: pointer;
-            border-radius: 5px;
-            font-size: 14px;
-        }
-
-        @media screen and (max-width: 767px) {
-            .container {
-                padding: 0 10px;
-            }
-
-            table.dataTable {
-                width: 100%;
-                table-layout: fixed;
-            }
-
-            table.dataTable th,
-            table.dataTable td {
-                word-wrap: break-word;
-            }
-        }
-
-        .signature-image {
-            margin-top: 10px;
-            max-width: 100%;
-            border: 1px solid #ddd;
-            border-radius: 5px;
-        }
-    </style>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link rel="stylesheet" href="/static/assets/css/dashboard.css">
 </head>
 
-<body>
+<body class="dark-mode"> <!-- Default to dark mode -->
     <div class="navbar">
-        <div>
-            <h1>GOAT</h1>
-            <h4>An Hempire Enterprise Company</h4>
+        <h1>ZapBot🔥</h1>
+        <div class="settings-container">
+            <!-- Settings Icon for Dark Mode Toggle -->
+            <i class="fas fa-cog settings-icon" id="settingsIcon"></i>
+            <!-- Dark Mode Toggle Options -->
+            <div id="themeToggle" class="theme-toggle" style="display: none;">
+                <button id="darkModeBtn" class="btn btn-dark">🌙 Dark Mode</button>
+                <button id="lightModeBtn" class="btn btn-light">☀️ Light Mode</button>
+            </div>
         </div>
     </div>
 
@@ -127,10 +41,10 @@
             <tbody>
                 {% for submission in submissions %}
                     <tr id="submission-{{ submission[0] }}">
-                        <td>{{ submission[1] }}</td> <!-- app_id -->
-                        <td>{{ submission[2].company_name }}</td> <!-- Company Name from data JSON -->
-                        <td>{{ submission[2].borrower_first_name }} {{ submission[2].borrower_last_name }}</td> <!-- Borrower Name -->
-                        <td>{{ submission[3].strftime('%Y-%m-%d %H:%M:%S') }}</td> <!-- submission_time -->
+                        <td>{{ submission[1] }}</td>
+                        <td>{{ submission[2].company_name }}</td>
+                        <td>{{ submission[2].borrower_first_name }} {{ submission[2].borrower_last_name }}</td>
+                        <td>{{ submission[3].strftime('%Y-%m-%d %H:%M:%S') }}</td>
                         <td>
                             <button class="btn btn-view-details" data-id="{{ submission[0] }}" data-details='{{ submission[2] | tojson }}'>View Details</button>
                             <button class="btn btn-delete" data-id="{{ submission[0] }}">Delete</button>
@@ -143,88 +57,7 @@
 
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="https://cdn.datatables.net/1.11.5/js/jquery.dataTables.min.js"></script>
-    <script>
-        $(document).ready(function () {
-            const table = $('#submissionsTable').DataTable({
-                responsive: false,
-                columnDefs: [],
-                order: [[0, 'asc']]
-            });
-
-            // Handle delete button click
-            $('#submissionsTable tbody').on('click', 'button.btn-delete', function () {
-                const submissionId = $(this).data('id');
-                if (confirm('Are you sure you want to delete this submission?')) {
-                    $.ajax({
-                        url: `/api/submissions/${submissionId}`,
-                        method: 'DELETE',
-                        success: function () {
-                            // Remove the row from DataTable after successful deletion
-                            table.row($(`#submission-${submissionId}`)).remove().draw();
-                            alert('Submission deleted successfully.');
-                        },
-                        error: function () {
-                            alert('Failed to delete submission.');
-                        }
-                    });
-                }
-            });
-
-            // Handle view details button click
-            $('#submissionsTable tbody').on('click', 'button.btn-view-details', function () {
-                const submissionId = $(this).data('id');
-                const details = $(this).data('details');  // Extract details from data attribute
-                const row = table.row($(this).parents('tr'));
-
-                const detailsHtml = `
-                    <div>
-                        <p><strong>Application ID:</strong> ${details.app_id || 'N/A'}</p>
-                        <p><strong>Company Name:</strong> ${details.company_name || 'N/A'}</p>
-                        <p><strong>Time in Business:</strong> ${details.time_in_business || 'N/A'}</p>
-                        <p><strong>Address:</strong> ${details.address_line_1 || ''}, ${details.city || ''}, ${details.state || ''} ${details.zip_code || ''}</p>
-                        <p><strong>Company Email:</strong> ${details.company_email || 'N/A'}</p>
-                        <p><strong>Company Phone:</strong> ${details.company_phone || 'N/A'}</p>
-                        <p><strong>EIN / TAX ID Number:</strong> ${details.ein || 'N/A'}</p>
-                        <p><strong>Type of Business:</strong> ${details.business_type || 'N/A'}</p>
-                        <p><strong>Borrower Name:</strong> ${details.borrower_first_name || ''} ${details.borrower_last_name || ''}</p>
-                        <p><strong>Date of Birth:</strong> ${details.borrower_dob || 'N/A'}</p>
-                        <p><strong>Percent Ownership:</strong> ${details.borrower_ownership || 'N/A'}</p>
-                        <p><strong>SSN:</strong> ${details.borrower_ssn || 'N/A'}</p>
-                        <p><strong>Phone:</strong> ${details.borrower_phone || 'N/A'}</p>
-                        <p><strong>Email:</strong> ${details.borrower_email || 'N/A'}</p>
-                        <p><strong>Preferred Method of Contact:</strong> ${details.borrower_preferred_contact || 'N/A'}</p>
-                        <p><strong>Borrower Address:</strong> ${details.borrower_address_line_1 || ''}, ${details.borrower_city || ''}, ${details.borrower_state || ''} ${details.borrower_zip_code || ''}</p>
-                        <p><strong>Co-Applicant Name:</strong> ${details.coapplicant_first_name || ''} ${details.coapplicant_last_name || ''}</p>
-                        <p><strong>Co-Applicant Date of Birth:</strong> ${details.coapplicant_dob || 'N/A'}</p>
-                        <p><strong>Co-Applicant Percent Ownership:</strong> ${details.coapplicant_ownership || 'N/A'}</p>
-                        <p><strong>Co-Applicant SSN:</strong> ${details.coapplicant_ssn || 'N/A'}</p>
-                        <p><strong>Co-Applicant Phone:</strong> ${details.coapplicant_phone || 'N/A'}</p>
-                        <p><strong>Co-Applicant Email:</strong> ${details.coapplicant_email || 'N/A'}</p>
-                        <p><strong>Co-Applicant Address:</strong> ${details.coapplicant_address_line_1 || ''}, ${details.coapplicant_city || ''}, ${details.coapplicant_state || ''} ${details.coapplicant_zip_code || ''}</p>
-                        <p><strong>Loan Amount:</strong> ${details.loan_amount || 'N/A'}</p>
-                        <p><strong>Max Down Payment:</strong> ${details.max_down_payment || 'N/A'}</p>
-                        <p><strong>Equipment & Seller Info:</strong> ${details.equipment_seller_info || 'N/A'}</p>
-                        <p><strong>Submission Time:</strong> ${details.submission_time || 'N/A'}</p>
-                        <p><strong>Browser:</strong> ${details.browser || 'N/A'}</p>
-                        <p><strong>IP Address:</strong> ${details.ip_address || 'N/A'}</p>
-                        <p><strong>Unique ID:</strong> ${details.unique_id || 'N/A'}</p>
-                        <p><strong>Location:</strong> ${details.location || 'N/A'}</p>
-                        <p><strong>Uploaded Files:</strong></p>
-                        ${(details.uploaded_files || []).map(file => `<p><a href="/uploads/${file}" target="_blank">${file}</a></p>`).join('')}
-                        <p><strong>Application PDF:</strong> <a href="/uploads/${details.pdf_filename || ''}" target="_blank">${details.pdf_filename || 'N/A'}</a></p>
-                    </div>
-                `;
-
-                if (row.child.isShown()) {
-                    row.child.hide();
-                    $(this).text('View Details');
-                } else {
-                    row.child(detailsHtml).show();
-                    $(this).text('Hide Details');
-                }
-            });
-        });
-    </script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.4/moment.min.js"></script>
+    <script src="../static/assets/js/dashboard.js"></script>
 </body>
-
 </html>

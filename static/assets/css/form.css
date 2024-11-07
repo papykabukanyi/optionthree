@@ -1,25 +1,20 @@
 @import url('https://fonts.googleapis.com/css?family=Poppins:400,500,600,700&display=swap');
 
-/* width */
+/* Scrollbar customization */
 ::-webkit-scrollbar {
     width: 10px;
 }
-
-/* Track */
 ::-webkit-scrollbar-track {
     background: #f1f1f1;
 }
-
-/* Handle */
 ::-webkit-scrollbar-thumb {
     background: #888;
 }
-
-/* Handle on hover */
 ::-webkit-scrollbar-thumb:hover {
     background: #555;
 }
 
+/* General reset and base styling */
 * {
     margin: 0;
     padding: 0;
@@ -34,7 +29,6 @@ body {
     justify-content: center;
     min-height: 100vh;
     padding: 10px;
-    font-family: 'Poppins', sans-serif;
     background-color: #a8a8a8;
     background-image: url("data:image/svg+xml,%3Csvg width='44' height='12' viewBox='0 0 44 12' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M20 12v-2L0 0v10l4 2h16zm18 0l4-2V0L22 10v2h16zM20 0v8L4 0h16zm18 0L22 8V0h16z' fill='%23000000' fill-opacity='0.7' fill-rule='evenodd'/%3E%3C/svg%3E");
 }
@@ -71,7 +65,7 @@ body {
 }
 
 .container form {
-    padding: 0px 0 0 0;
+    padding: 0;
 }
 
 .container form .form-row {
@@ -86,10 +80,7 @@ form .form-row .input-data {
     position: relative;
 }
 
-form .form-row .textarea {
-    height: 70px;
-}
-
+/* Input, select, and textarea styling */
 .input-data input,
 .input-data select,
 .textarea textarea {
@@ -100,9 +91,10 @@ form .form-row .textarea {
     font-size: 17px;
     border-bottom: 2px solid rgba(0, 0, 0, 0.12);
     background: none;
-    padding: 5px 0; /* Add padding to input fields */
+    padding: 5px 0;
 }
 
+/* Select styling */
 .input-data select {
     -webkit-appearance: none;
     -moz-appearance: none;
@@ -115,19 +107,7 @@ form .form-row .textarea {
 }
 
 .input-data input[type="date"]::-webkit-datetime-edit {
-    opacity: 0; /* Hide the placeholder */
-}
-
-.input-data input[type="date"]:focus::-webkit-datetime-edit {
-    opacity: 1; /* Show the placeholder on focus */
-}
-
-.input-data input:focus~label, .textarea textarea:focus~label,
-.input-data input:valid~label, .textarea textarea:valid~label,
-.input-data select:focus~label, .input-data select:valid~label {
-    transform: translateY(-20px);
-    font-size: 14px;
-    color: #3d3d3d;
+    opacity: 1;
 }
 
 .textarea textarea {
@@ -135,20 +115,19 @@ form .form-row .textarea {
     padding-top: 10px;
 }
 
+/* Label styling - fixed position above inputs */
 .input-data label {
     position: absolute;
+    top: -20px; /* Fixed above the input */
+    font-size: 14px;
+    color: #3d3d3d;
     pointer-events: none;
-    bottom: 10px;
-    font-size: 16px;
-    transition: all 0.3s ease;
-}
-
-.textarea label {
-    width: 100%;
-    bottom: 40px;
     background: #fff;
+    padding: 0 5px;
+    left: 0;
 }
 
+/* No transition for labels - they stay fixed above inputs */
 .input-data .underline {
     position: absolute;
     bottom: 0;
@@ -161,7 +140,7 @@ form .form-row .textarea {
     content: "";
     height: 2px;
     width: 100%;
-    background: #4d4d4d;
+    background: #e4e4e4;
     transform: scaleX(0);
     transform-origin: center;
     transition: transform 0.3s ease;
@@ -222,6 +201,7 @@ form .form-row .textarea {
     font-size: 14px;
 }
 
+/* Responsive styling */
 @media (max-width: 800px) {
     .container {
         padding: 20px;
@@ -238,10 +218,6 @@ form .form-row .textarea {
 
     .logo {
         width: 100px;
-    }
-
-    .container form {
-        padding: 10px 0 0 0;
     }
 
     .container form .form-row {
