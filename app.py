@@ -400,7 +400,7 @@ def parse_app_id_from_subject(subject):
     return None
 # Schedule email fetching every 5 minutes
 scheduler = BackgroundScheduler()
-scheduler.add_job(fetch_replies, trigger=IntervalTrigger(minutes=60))
+scheduler.add_job(fetch_replies, trigger=IntervalTrigger(minutes=5))
 scheduler.start()
 # Route to fetch email replies
 @app.route('/fetch_replies')
