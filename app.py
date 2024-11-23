@@ -22,8 +22,8 @@ from email import encoders
 from dotenv import load_dotenv
 import logging
 from database import (
-    init_db, insert_submission, get_submissions, delete_submission, generate_app_id,
-    insert_note, insert_communication, get_submission_by_id, get_notes, insert_reply, get_replies
+    init_db, insert_submission, get_all_vendors, get_submissions, delete_submission, generate_app_id,
+    insert_note, insert_communication, get_submission_by_id, get_notes, insert_vendor, insert_reply, get_replies
 )
 # Setup logging
 logging.basicConfig(level=logging.DEBUG)
@@ -37,6 +37,7 @@ socketio = SocketIO(app)
 app.config['UPLOAD_FOLDER'] = os.path.join(os.getcwd(), 'uploads')
 app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16 MB limit
 app.secret_key = os.getenv('SECRET_KEY')
+admin_emails = [os.getenv('RECEIVER_EMAIL_1'), os.getenv('RECEIVER_EMAIL_2')]
 # Initialize the database
 init_db()
 # Ensure the upload folder exists
@@ -272,13 +273,46 @@ def email_sent():
 @app.route('/congratulation')
 def congratulation():
     return render_template('congratulation.html')
+@app.route('/vendor_signup')
+def vendor_signup():
+    return render_template('vendor_signup.html')
 @app.route('/uploads/<filename>')
 def uploaded_file(filename):
     return send_from_directory(app.config['UPLOAD_FOLDER'], filename)
-@app.route('/api/submissions/<int:submission_id>/notes', methods=['GET'])
-def get_notes_api(submission_id):
-    notes = get_notes(submission_id)
-    return jsonify(notes)
+@app.route('/api/records/<record_type>/<int:record_id>/notes', methods=['GET'])
+def get_notes_for_record(record_type, record_id):
+    """
+    Fetch notes for a submission or vendor.
+    record_type: 'submission' or 'vendor'
+    record_id: The ID of the record
+    """
+    if record_type not in ['submission', 'vendor']:
+        return jsonify({'error': 'Invalid record type'}), 400
+
+    try:
+        notes = get_notes(record_id, record_type)
+        return jsonify(notes), 200
+    except Exception as e:
+        logging.error(f"Error fetching notes for {record_type} ID {record_id}: {e}")
+        return jsonify({'error': 'Failed to fetch notes'}), 500
+
+@app.route('/api/submissions', methods=['GET'])
+def get_submissions_api():
+    try:
+        submissions = get_submissions()  # Fetches data from the database
+        submissions_data = [
+            {
+                "id": submission[0],
+                "app_id": submission[1],
+                "data": submission[2],
+                "submission_time": submission[3].strftime('%Y-%m-%d %H:%M:%S')
+            }
+            for submission in submissions
+        ]
+        return jsonify(submissions_data)
+    except Exception as e:
+        logging.error(f"Error fetching submissions: {e}")
+        return jsonify({"error": "Failed to fetch submissions."}), 500
 # Update status route to ensure correct handling
 @app.route('/api/submissions/<int:submission_id>/status', methods=['POST'])
 def update_status(submission_id):
@@ -411,28 +445,102 @@ def fetch_replies_route():
     except Exception as e:
         logging.error(f"Error fetching email replies: {e}")
         return jsonify({"status": "error", "message": str(e)}), 500
+@app.route('/submit_vendor', methods=['POST'])
+def submit_vendor():
+    try:
+        # Parse JSON data from the form submission
+        data = request.get_json()
+        first_name = data.get('first_name')
+        last_name = data.get('last_name')
+        business_name = data.get('business_name')
+        business_type = data.get('business_type')
+        phone = data.get('phone')
+        email = data.get('email')
+        address_line1 = data.get('address_line1')
+        address_line2 = data.get('address_line2')
+        city = data.get('city')
+        state = data.get('state')
+        zip_code = data.get('zip_code')
+
+        # Insert vendor into the database
+        vendor_id = insert_vendor(
+            first_name, last_name, business_name, business_type,
+            phone, email, address_line1, address_line2, city, state, zip_code
+        )
+
+        # Send thank-you email to the vendor
+        vendor_thank_you_content = render_template('vendor_thank_you.html', first_name=first_name, business_name=business_name)
+        send_email(email, "Thank You for Signing Up with Hempire", vendor_thank_you_content)
+
+        # Send new vendor notification email to each admin email in the list
+        new_vendor_content = render_template('new_vendor_html.html', first_name=first_name, last_name=last_name,
+                                             business_name=business_name, business_type=business_type, phone=phone,
+                                             email=email, address_line1=address_line1, address_line2=address_line2,
+                                             city=city, state=state, zip_code=zip_code)
+        for admin_email in admin_emails:
+            if admin_email:  # Ensure email is not None
+                send_email(admin_email, "New Vendor Signup Notification", new_vendor_content)
+
+        # Respond with success
+        return jsonify({"success": True, "vendor_id": vendor_id})
+    except Exception as e:
+        # Log error and respond with failure
+        logging.error(f"Error inserting vendor: {e}")
+        return jsonify({"success": False, "error": str(e)})
+# Route to fetch vendor data
+@app.route('/api/vendors', methods=['GET'])
+def get_vendors_api():
+    try:
+        vendors = get_all_vendors()  # Fetches data from the database
+        return jsonify(vendors), 200
+    except Exception as e:
+        logging.error(f"Error fetching vendors: {e}")
+        return jsonify({"error": "Failed to fetch vendors."}), 500
 # Route to save notes and send email if @email is in the note
-@app.route('/api/submissions/<int:submission_id>/note', methods=['POST'])
-def add_note_with_notification(submission_id):
+@app.route('/api/records/<record_type>/<int:record_id>/note', methods=['POST'])
+def add_note(record_type, record_id):
+    """
+    Add a note for a submission or vendor.
+    record_type: 'submission' or 'vendor'
+    record_id: The ID of the record
+    """
+    if record_type not in ['submission', 'vendor']:
+        return jsonify({'error': 'Invalid record type'}), 400
+
     data = request.get_json()
     note = data.get('note')
-    send_email_flag = '@email' in note
     if not note:
         return jsonify({'error': 'Note content required'}), 400
-    note_cleaned = note.replace('@email', '').strip()
-    insert_note(submission_id, note_cleaned)
-    logging.info(f"Note added for submission ID {submission_id}: {note_cleaned}")
-    # Send the update through WebSocket to update the dashboard in real-time
-    socketio.emit('note_update', {'submissionId': submission_id, 'note': note_cleaned})
-    submission = get_submission_by_id(submission_id)
-    if submission:
-        borrower_email = submission['data'].get("borrower_email")
-        app_id = submission['app_id']
-        if send_email_flag and borrower_email:
-            email_subject = f"Update on Your Application ID: {app_id}"
-            logging.debug(f"Sending email to {borrower_email} with subject: '{email_subject}'")
-            send_email(borrower_email, email_subject, note_cleaned)
-    return jsonify({'message': 'Note added and email sent if applicable.'}), 201
+
+    try:
+        insert_note(record_id, record_type, note)
+        logging.info(f"Note added for {record_type} ID {record_id}: {note}")
+        return jsonify({'message': 'Note added successfully'}), 201
+    except Exception as e:
+        logging.error(f"Error adding note for {record_type} ID {record_id}: {e}")
+        return jsonify({'error': 'Failed to add note'}), 500
+
+# @app.route('/api/submissions/<int:submission_id>/note', methods=['POST'])
+# def add_note_with_notification(submission_id):
+#     data = request.get_json()
+#     note = data.get('note')
+#     send_email_flag = '@email' in note
+#     if not note:
+#         return jsonify({'error': 'Note content required'}), 400
+#     note_cleaned = note.replace('@email', '').strip()
+#     insert_note(submission_id, note_cleaned)
+#     logging.info(f"Note added for submission ID {submission_id}: {note_cleaned}")
+#     # Send the update through WebSocket to update the dashboard in real-time
+#     socketio.emit('note_update', {'submissionId': submission_id, 'note': note_cleaned})
+#     submission = get_submission_by_id(submission_id)
+#     if submission:
+#         borrower_email = submission['data'].get("borrower_email")
+#         app_id = submission['app_id']
+#         if send_email_flag and borrower_email:
+#             email_subject = f"Update on Your Application ID: {app_id}"
+#             logging.debug(f"Sending email to {borrower_email} with subject: '{email_subject}'")
+#             send_email(borrower_email, email_subject, note_cleaned)
+#     return jsonify({'message': 'Note added and email sent if applicable.'}), 201
 @socketio.on('connect')
 def handle_connect():
     logging.info("Client connected to WebSocket.")

@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hempire Vendor Signup</title>
+    <!-- W2UI CSS -->
+    <link rel="stylesheet" href="https://rawgit.com/vitmalina/w2ui/master/dist/w2ui.min.css">
+    <style>
+        /* Container styling for form responsiveness */
+        #form {
+            max-width: 600px;
+            width: 90%; /* Responsive width for smaller screens */
+            margin: 50px auto;
+        }
+        
+        /* Custom styling for labels and input fields */
+        .w2ui-field label {
+            width: 150px; /* Sufficient width for full label visibility */
+            display: inline-block;
+            font-weight: bold;
+        }
+        .w2ui-field input {
+            width: calc(100% - 160px); /* Adjust input width relative to label */
+        }
+
+        /* Responsive adjustments for smaller screens */
+        @media (max-width: 600px) {
+            .w2ui-field label {
+                width: 100%; /* Labels take full width on small screens */
+                margin-bottom: 5px;
+            }
+            .w2ui-field input {
+                width: 100%; /* Inputs take full width on small screens */
+                margin-left: 0;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div id="form"></div>
+
+    <script type="module">
+        import { w2form, w2popup, w2alert } from 'https://rawgit.com/vitmalina/w2ui/master/dist/w2ui.es6.min.js';
+
+        let form = new w2form({
+            box: '#form',
+            name: 'vendorSignupForm',
+            header: 'Hempire Vendor Signup',
+            fields: [
+                { field: 'first_name', type: 'text', required: true,
+                    html: {
+                        group: 'Personal Details',
+                        label: 'First Name',
+                        span: 4,
+                        attr: 'style="width: 100%;"'
+                    }
+                },
+                { field: 'last_name', type: 'text', required: true,
+                    html: {
+                        label: 'Last Name',
+                        span: 4,
+                        attr: 'style="width: 100%;"'
+                    }
+                },
+                { field: 'business_name', type: 'text', required: true,
+                    html: {
+                        group: 'Business Information',
+                        label: 'Business Name',
+                        span: 5,
+                        attr: 'style="width: 100%;"'
+                    }
+                },
+                { field: 'business_type', type: 'text', required: true,
+                    html: {
+                        label: 'Type of Business',
+                        span: 5,
+                        attr: 'style="width: 100%;"'
+                    }
+                },
+                { field: 'phone', type: 'text', required: true,
+                    html: {
+                        group: 'Contact Information',
+                        label: 'Phone Number',
+                        span: 5,
+                        attr: 'style="width: 100%;"'
+                    }
+                },
+                { field: 'email', type: 'email', required: true,
+                    html: {
+                        label: 'Email Address',
+                        span: 5 ,
+                        attr: 'style="width: 100%;"'
+                    }
+                },
+                { field: 'address_line1', type: 'text', required: true,
+                    html: {
+                        group: 'Address',
+                        label: 'Address Line 1',
+                        span: 5,
+                        attr: 'style="width: 100%;"'
+                    }
+                },
+                { field: 'address_line2', type: 'text',
+                    html: {
+                        label: 'Address Line 2',
+                        span: 5,
+                        attr: 'style="width: 100%;"'
+                    }
+                },
+                { field: 'city', type: 'text', required: true,
+                    html: {
+                        label: 'City',
+                        span: 4,
+                        attr: 'style="width: 100%;"'
+                    }
+                },
+                { field: 'state', type: 'text', required: true,
+                    html: {
+                        label: 'State',
+                        span: 4,
+                        attr: 'style="width: 100%;"'
+                    }
+                },
+                { field: 'zip_code', type: 'int', required: true,
+                    html: {
+                        label: 'Zip Code',
+                        span: 4,
+                        attr: 'style="width: 100%;"'
+                    }
+                }
+            ],
+            actions: {
+                Reset() {
+                    this.clear();
+                },
+                Submit() {
+                    if (this.validate().length === 0) {
+                        // Submit form data to the backend
+                        fetch('/submit_vendor', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json'
+                            },
+                            body: JSON.stringify(this.record)
+                        })
+                        .then(response => response.json())
+                        .then(data => {
+                            if (data.success) {
+                                w2alert('Vendor signed up successfully!');
+                                this.clear();
+                            } else {
+                                w2alert('Failed to sign up vendor.');
+                            }
+                        })
+                        .catch(error => {
+                            console.error('Error:', error);
+                            w2alert('An error occurred. Please try again.');
+                        });
+                    }
+                }
+            }
+        });
+
+        // Add footer for additional information and PDF download links
+        document.body.insertAdjacentHTML('beforeend', `
+            <div id="footer" style="width: 90%; max-width: 600px; margin: 20px auto; text-align: center;">
+                <p style="font-size: 14px; color: #555;">For more information, please download the following documents:</p>
+                <a href="/static/docs/vendor_guidelines.pdf" target="_blank" class="w2ui-btn">Vendor Guidelines PDF</a>
+                <a href="/static/docs/terms_and_conditions.pdf" target="_blank" class="w2ui-btn">Terms and Conditions PDF</a>
+            </div>
+        `);
+    </script>
+</body>
+</html>

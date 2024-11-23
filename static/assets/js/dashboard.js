@@ -1,219 +1,342 @@
 $(document).ready(function () {
-    const table = $('#submissionsTable').DataTable({
-        responsive: false,
-        columnDefs: [],
-        order: [[0, 'asc']]
+    console.log("Initializing dashboard...");
+    
+    // Initialize layout
+    $('#main-layout').w2layout({
+        name: 'layout',
+        panels: [
+            { type: 'left', size: 150, resizable: false, minSize: 120 },
+            { type: 'main', minSize: 550 }
+        ]
     });
-
-    // Handle delete button click
-    $('#submissionsTable tbody').on('click', 'button.btn-delete', function () {
-        const submissionId = $(this).data('id');
-        if (confirm('Are you sure you want to delete this submission?')) {
-            $.ajax({
-                url: `/api/submissions/${submissionId}`,
-                method: 'DELETE',
-                success: function () {
-                    table.row($(`#submission-${submissionId}`)).remove().draw();
-                    alert('Submission deleted successfully.');
-                },
-                error: function () {
-                    alert('Failed to delete submission.');
-                }
-            });
+    
+    console.log("Initializing sidebar...");
+    
+    // Initialize sidebar with "Submissions", "Vendors", and "Analytics"
+    $().w2sidebar({
+        name: 'sidebar',
+        nodes: [{
+            id: 'menu',
+            text: 'Menu',
+            group: true,
+            expanded: true,
+            nodes: [
+                { id: 'submissions', text: 'Submissions', icon: 'fa fa-university' },
+                { id: 'vendors', text: 'Vendors', icon: 'fa fa-briefcase' },
+                { id: 'analytics', text: 'Analytics', icon: 'fa fa-chart-bar' }
+            ]
+        }],
+        onClick: function (event) {
+            console.log("Sidebar item clicked:", event.target);
+            
+            if (event.target === 'submissions') {
+                w2ui.layout.html('main', '<div id="submissionsTableWrapper" style="width: 100%; height: 100%;"></div>');
+                loadSubmissionsGrid();
+            } else if (event.target === 'vendors') {
+                w2ui.layout.html('main', '<div id="vendorsTableWrapper" style="width: 100%; height: 100%;"></div>');
+                loadVendorsGrid();
+            } else if (event.target === 'analytics') {
+                w2ui.layout.html('main', '<div id="analyticsContent" style="padding: 20px;"><h2>Analytics Dashboard</h2><p>Here is where analytics data will be displayed.</p></div>');
+            }
         }
     });
+    
+    console.log("Rendering sidebar in layout...");
+    w2ui.layout.html('left', w2ui['sidebar']);
 
-    // Handle view details button click
-    $('#submissionsTable tbody').on('click', 'button.btn-view-details', function () {
-        const submissionId = $(this).data('id');
-        const details = $(this).data('details');
-        const row = table.row($(this).parents('tr'));
+    // Load W2UI grid for submissions
+    function loadSubmissionsGrid() {
+        console.log("Loading submissions grid...");
+        
+        if (w2ui['submissionsGrid']) w2ui['submissionsGrid'].destroy();
+        $('#submissionsTableWrapper').w2grid({
+            name: 'submissionsGrid',
+            show: { toolbar: true, footer: true },
+            columns: [
+                { field: 'app_id', text: 'ID', size: '150px' },
+                { field: 'company_name', text: 'Business Name', size: '550px' },
+                { field: 'borrower_name', text: 'Borrower Name', size: '350px' },
+                { field: 'submission_time', text: 'Submission Time', size: '200px' },
+                {
+                    field: 'actions',
+                    text: 'Actions',
+                    size: '110px',
+                    render: function (record) {
+                        return `<button class="w2ui-btn w2ui-btn-blue btn-view-details" data-recid="${record.recid}">View Details</button>`;
+                    }
+                }
+            ],
+            records: [],
+            onRender: function () {
+                $('#submissionsTableWrapper').off('click', '.btn-view-details').on('click', '.btn-view-details', function () {
+                    const recid = $(this).data('recid');
+                    const record = w2ui['submissionsGrid'].get(recid);
+                    if (record) {
+                        viewSubmissionDetails(record);
+                    } else {
+                        console.error("Record not found for recid:", recid);
+                    }
+                });
+            }
+        });
+        loadSubmissionsData();
+    }
 
+    // Load W2UI grid for vendors
+    function loadVendorsGrid() {
+        console.log("Loading vendors grid...");
+        
+        if (w2ui['vendorsGrid']) w2ui['vendorsGrid'].destroy();
+        $('#vendorsTableWrapper').w2grid({
+            name: 'vendorsGrid',
+            show: { toolbar: true, footer: true },
+            columns: [
+                { field: 'vendor_id', text: 'Vendor ID', size: '150px' },
+                { field: 'business_name', text: 'Business Name', size: '550px' },
+                { field: 'contact_name', text: 'Contact Name', size: '350px' },
+                { field: 'contact_email', text: 'Contact Email', size: '200px' },
+                {
+                    field: 'actions',
+                    text: 'Actions',
+                    size: '110px',
+                    render: function (record) {
+                        return `<button class="w2ui-btn w2ui-btn-blue btn-view-vendor" data-recid="${record.recid}">View Vendor</button>`;
+                    }
+                }
+            ],
+            records: [],
+            onRender: function () {
+                $('#vendorsTableWrapper').off('click', '.btn-view-vendor').on('click', '.btn-view-vendor', function () {
+                    const recid = $(this).data('recid');
+                    const record = w2ui['vendorsGrid'].get(recid);
+                    if (record) {
+                        viewVendorDetails(record);
+                    } else {
+                        console.error("Record not found for recid:", recid);
+                    }
+                });
+            }
+        });
+        loadVendorsData();
+    }
+
+    // Load submissions data from the server
+    function loadSubmissionsData() {
+        console.log("Fetching submissions data from /api/submissions...");
+        
+        $.ajax({
+            url: '/api/submissions',
+            method: 'GET',
+            success: function (data) {
+                console.log("Received submissions data:", data);
+                
+                const records = data.map((submission, index) => ({
+                    recid: index + 1,
+                    submission_id: submission.id,
+                    app_id: submission.app_id,
+                    company_name: submission.data.company_name || 'N/A',
+                    borrower_name: `${submission.data.borrower_first_name || ''} ${submission.data.borrower_last_name || ''}`,
+                    submission_time: submission.submission_time || 'N/A',
+                }));
+                w2ui['submissionsGrid'].records = records;
+                w2ui['submissionsGrid'].refresh();
+            },
+            error: function (xhr, status, error) {
+                console.error('Failed to load submissions. Status:', status, 'Error:', error);
+                alert('Failed to load submissions.');
+            }
+        });
+    }
+
+    // Load vendors data from the server
+    function loadVendorsData() {
+        console.log("Fetching vendors data from /api/vendors...");
+        
+        $.ajax({
+            url: '/api/vendors',
+            method: 'GET',
+            success: function (data) {
+                console.log("Received vendors data:", data);
+                
+                const records = data.map((vendor, index) => ({
+                    recid: index + 1,
+                    vendor_id: vendor.vendor_id,
+                    business_name: vendor.business_name || 'N/A',
+                    contact_name: `${vendor.first_name || ''} ${vendor.last_name || ''}`,
+                    contact_email: vendor.email || 'N/A',
+                }));
+                w2ui['vendorsGrid'].records = records;
+                w2ui['vendorsGrid'].refresh();
+            },
+            error: function (xhr, status, error) {
+                console.error('Failed to load vendors. Status:', status, 'Error:', error);
+                alert('Failed to load vendors.');
+            }
+        });
+    }
+
+    // View submission details in a popup
+    function viewSubmissionDetails(record) {
         const detailsHtml = `
-            <div style="display: flex; justify-content: space-between;">
-                <div>
-                    <p><strong>Application ID:</strong> ${details.app_id || 'N/A'}</p>
-                    <p><strong>Company Name:</strong> ${details.company_name || 'N/A'}</p>
-                    <p><strong>Time in Business:</strong> ${details.time_in_business || 'N/A'}</p>
-                    <p><strong>Address:</strong> ${details.address_line_1 || ''}, ${details.city || ''}, ${details.state || ''} ${details.zip_code || ''}</p>
-                    <p><strong>Company Email:</strong> ${details.company_email || 'N/A'}</p>
-                    <p><strong>Company Phone:</strong> ${details.company_phone || 'N/A'}</p>
-                    <p><strong>EIN / TAX ID Number:</strong> ${details.ein || 'N/A'}</p>
-                    <p><strong>Type of Business:</strong> ${details.business_type || 'N/A'}</p>
-                    <p><strong>Borrower Name:</strong> ${details.borrower_first_name || ''} ${details.borrower_last_name || ''}</p>
-                    <p><strong>Date of Birth:</strong> ${details.borrower_dob || 'N/A'}</p>
-                    <p><strong>Percent Ownership:</strong> ${details.borrower_ownership || 'N/A'}</p>
-                    <p><strong>SSN:</strong> ${details.borrower_ssn || 'N/A'}</p>
-                    <p><strong>Phone:</strong> ${details.borrower_phone || 'N/A'}</p>
-                    <p><strong>Email:</strong> ${details.borrower_email || 'N/A'}</p>
-                    <p><strong>Preferred Method of Contact:</strong> ${details.borrower_preferred_contact || 'N/A'}</p>
-                    <p><strong>Borrower Address:</strong> ${details.borrower_address_line_1 || ''}, ${details.borrower_city || ''}, ${details.borrower_state || ''} ${details.borrower_zip_code || ''}</p>
-                    <p><strong>Co-Applicant Name:</strong> ${details.coapplicant_first_name || ''} ${details.coapplicant_last_name || ''}</p>
-                    <p><strong>Co-Applicant Date of Birth:</strong> ${details.coapplicant_dob || 'N/A'}</p>
-                    <p><strong>Co-Applicant Percent Ownership:</strong> ${details.coapplicant_ownership || 'N/A'}</p>
-                    <p><strong>Co-Applicant SSN:</strong> ${details.coapplicant_ssn || 'N/A'}</p>
-                    <p><strong>Co-Applicant Phone:</strong> ${details.coapplicant_phone || 'N/A'}</p>
-                    <p><strong>Co-Applicant Email:</strong> ${details.coapplicant_email || 'N/A'}</p>
-                    <p><strong>Co-Applicant Address:</strong> ${details.coapplicant_address_line_1 || ''}, ${details.coapplicant_city || ''}, ${details.coapplicant_state || ''} ${details.coapplicant_zip_code || ''}</p>
-                    <p><strong>Loan Amount:</strong> ${details.loan_amount || 'N/A'}</p>
-                    <p><strong>Max Down Payment:</strong> ${details.max_down_payment || 'N/A'}</p>
-                    <p><strong>Equipment & Seller Info:</strong> ${details.equipment_seller_info || 'N/A'}</p>
-                    <p><strong>Submission Time:</strong> ${details.submission_time || 'N/A'}</p>
-                    <p><strong>Browser:</strong> ${details.browser || 'N/A'}</p>
-                    <p><strong>IP Address:</strong> ${details.ip_address || 'N/A'}</p>
-                    <p><strong>Unique ID:</strong> ${details.unique_id || 'N/A'}</p>
-                    <p><strong>Location:</strong> ${details.location || 'N/A'}</p>
-                    <p><strong>Uploaded Files:</strong></p>
-                    ${(details.uploaded_files || []).map(file => `<p><a href="/uploads/${file}" target="_blank">${file}</a></p>`).join('')}
-                    <p><strong>Application PDF:</strong> <a href="/uploads/${details.pdf_filename || ''}" target="_blank">${details.pdf_filename || 'N/A'}</a></p>
+            <div style="padding: 10px; display: flex; justify-content: space-between;">
+                <div style="width: 50%;">
+                    <p><strong>Application ID:</strong> ${record.app_id || 'N/A'}</p>
+                    <p><strong>Company Name:</strong> ${record.company_name || 'N/A'}</p>
+                    <p><strong>Time in Business:</strong> ${record.time_in_business || 'N/A'}</p>
+                    <p><strong>Address:</strong> ${record.address_line_1 || ''}, ${record.city || ''}, ${record.state || ''} ${record.zip_code || ''}</p>
+                    <p><strong>Company Email:</strong> ${record.company_email || 'N/A'}</p>
+                    <p><strong>Company Phone:</strong> ${record.company_phone || 'N/A'}</p>
                 </div>
                 <div style="width: 45%; padding-left: 20px;">
                     <h5>Notes✨ & Status Updates🔌</h5>
-                    <div id="notes-section-${submissionId}" class="notes-section"></div>
+                    <div id="notes-section-${record.submission_id}" class="notes-section"></div>
                     <div class="notes-container">
-                        <textarea id="note-input-${submissionId}" rows="3" placeholder="Add a new note...👀"></textarea>
-                        <button class="btn btn-primary btn-send-note mt-2" onclick="saveNote(${submissionId})">Save Note🔥</button>
+                        <textarea id="note-input-${record.submission_id}" rows="3" placeholder="Add a new note...👀"></textarea>
+                        <button class="w2ui-btn w2ui-btn-blue btn-send-note mt-2" data-submission-id="${record.submission_id}">Save Note🔥</button>
                     </div>
                     <h6 class="mt-3">Status Update🤗</h6>
                     <div style="display: flex; align-items: center;">
-                        <select id="status-select-${submissionId}" class="form-control status-select">
+                        <select id="status-select-${record.submission_id}" class="form-control status-select">
                             <option value="">Select Status</option>
                             <option value="In Review">In Review🙃</option>
                             <option value="Rejected">Rejected😥</option>
                             <option value="Approved">Approved🎉</option>
                         </select>
-                        <button class="btn btn-success btn-send-status" onclick="sendStatusUpdate(${submissionId})">Send⚡</button>
-                        <span id="status-loader-${submissionId}" style="display: none; margin-left: 10px;">Loading...</span>
-                        <span id="status-check-${submissionId}" style="display: none; color: green; margin-left: 10px;">&#10003;</span>
+                        <button class="w2ui-btn w2ui-btn-green btn-send-status" onclick="sendStatusUpdate(${record.submission_id})">Send⚡</button>
+                        <span id="status-loader-${record.submission_id}" style="display: none; margin-left: 10px;">Loading...</span>
+                        <span id="status-check-${record.submission_id}" style="display: none; color: green; margin-left: 10px;">&#10003;</span>
                     </div>
                 </div>
             </div>`;
+        w2popup.open({
+            title: record.app_id,
+            body: detailsHtml,
+            width: 1000,
+            height: 600,
+            modal: false,
+            showClose: true,
+            showMax: true,
+        });
+        loadNotes(record.submission_id);
+    }
 
-        if (row.child.isShown()) {
-            row.child.hide();
-            $(this).text('View Details');
-        } else {
-            row.child(detailsHtml).show();
-            $(this).text('Hide Details');
-            loadNotes(submissionId); // Load notes for this submission
-        }
+    // View vendor details in a popup
+    function viewVendorDetails(record) {
+        const detailsHtml = `
+            <div style="padding: 10px; display: flex; justify-content: space-between;">
+                <div style="width: 50%;">
+                    <p><strong>Business Name:</strong> ${record.business_name || 'N/A'}</p>
+                    <p><strong>Contact Name:</strong> ${record.contact_name || 'N/A'}</p>
+                    <p><strong>Contact Email:</strong> ${record.contact_email || 'N/A'}</p>
+                </div>
+                <div style="width: 45%; padding-left: 20px;">
+                    <h5>Notes✨ & Status Updates🔌</h5>
+                    <div id="notes-section-${record.vendor_id}" class="notes-section"></div>
+                    <div class="notes-container">
+                        <textarea id="note-input-${record.vendor_id}" rows="3" placeholder="Add a new note...👀"></textarea>
+                        <button class="w2ui-btn w2ui-btn-blue btn-send-note mt-2" data-vendor-id="${record.vendor_id}">Save Note🔥</button>
+                    </div>
+                    <h6 class="mt-3">Status Update🤗</h6>
+                    <div style="display: flex; align-items: center;">
+                        <select id="status-select-${record.vendor_id}" class="w2ui-select">
+                            <option value="">Select Status</option>
+                            <option value="In Review">In Review🙃</option>
+                            <option value="Rejected">Rejected😥</option>
+                            <option value="Approved">Approved🎉</option>
+                        </select>
+                        <button class="w2ui-btn w2ui-btn-green btn-send-status" onclick="sendStatusUpdate(${record.vendor_id})">Send⚡</button>
+                        <span id="status-loader-${record.vendor_id}" style="display: none; margin-left: 10px;">Loading...</span>
+                        <span id="status-check-${record.vendor_id}" style="display: none; color: green; margin-left: 10px;">&#10003;</span>
+                    </div>
+                </div>
+            </div>`;
+        w2popup.open({
+            title: record.business_name,
+            body: detailsHtml,
+            width: 1000,
+            height: 600,
+            modal: false,
+            showClose: true,
+            showMax: true,
+        });
+        loadNotes(record.vendor_id);
+    }
+
+    // Additional unchanged methods: sendStatusUpdate, saveNoteForRecord, loadNotes, formatTimeAgo, etc.
+    // Send status update
+    function sendStatusUpdate(id) {
+        const status = $(`#status-select-${id}`).val();
+        if (!status) return alert("Please select a status.");
+        $(`#status-loader-${id}`).show();
+        $.ajax({
+            url: `/api/submissions/${id}/status`,
+            method: 'POST',
+            contentType: 'application/json',
+            data: JSON.stringify({ status }),
+            success: function () {
+                $(`#status-loader-${id}`).hide();
+                $(`#status-check-${id}`).show().delay(2000).fadeOut();
+            },
+            error: function () {
+                $(`#status-loader-${id}`).hide();
+                alert("Failed to update status.");
+            }
+        });
+    }
+
+    // Event delegation for saving notes
+    $(document).on('click', '.btn-send-note', function () {
+        const id = $(this).data('submission-id') || $(this).data('vendor-id');
+        saveNoteForRecord(id);
     });
+
+    // Save note for a submission or vendor
+    function saveNoteForRecord(id) {
+        const note = $(`#note-input-${id}`).val();
+        if (!note) return alert("Please enter a note.");
+        $.ajax({
+            url: `/api/submissions/${id}/note`,
+            method: 'POST',
+            contentType: 'application/json',
+            data: JSON.stringify({ note }),
+            success: function () {
+                $(`#note-input-${id}`).val('');
+                loadNotes(id);
+            },
+            error: function () {
+                alert("Failed to save note.");
+            }
+        });
+    }
+
+    // Load notes for a submission or vendor
+    function loadNotes(id) {
+        $.ajax({
+            url: `/api/submissions/${id}/notes`,
+            method: 'GET',
+            success: function (notes) {
+                const notesSection = $(`#notes-section-${id}`);
+                notesSection.empty();
+                notes.sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
+                notes.forEach(note => {
+                    const timeAgo = formatTimeAgo(note.timestamp);
+                    notesSection.append(`<div><strong>${timeAgo}:</strong> ${note.note}</div>`);
+                });
+                scrollToBottom(notesSection);
+            },
+            error: function () {
+                alert("Failed to load notes.");
+            }
+        });
+    }
+
+    // "Time ago" formatter function
+    function formatTimeAgo(timestamp) {
+        const time = moment.utc(timestamp);
+        return time.local().fromNow();
+    }
 });
-
-// Save note function
-function saveNote(submissionId) {
-    const note = $(`#note-input-${submissionId}`).val();
-    if (!note) return alert("Please enter a note.");
-
-    $.ajax({
-        url: `/api/submissions/${submissionId}/note`,
-        method: 'POST',
-        contentType: 'application/json',
-        data: JSON.stringify({ note }),
-        success: function () {
-            $(`#note-input-${submissionId}`).val(''); // Clear input
-            loadNotes(submissionId); // Reload notes section
-        },
-        error: function () {
-            alert('Failed to save note.');
-        }
-    });
-}
-
-// Load notes function with proper server timestamp handling
-function loadNotes(submissionId) {
-    $.ajax({
-        url: `/api/submissions/${submissionId}/notes`,
-        method: 'GET',
-        success: function (notes) {
-            const notesSection = $(`#notes-section-${submissionId}`);
-            notesSection.empty();
-
-            // Sort notes by timestamp from oldest to newest
-            notes.sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
-
-            notes.forEach(note => {
-                const timeAgo = formatTimeAgo(note.timestamp);  // Use Moment.js to format time
-                notesSection.append(`<div><strong>${timeAgo}:</strong> ${note.note}</div>`);
-            });
-
-            scrollToBottom(notesSection); // Auto-scroll to the latest note
-        },
-        error: function () {
-            alert('Failed to load notes.');
-        }
-    });
-}
-
 // Scroll to the bottom of the notes section
 function scrollToBottom(element) {
     element.scrollTop(element.prop("scrollHeight"));
 }
-
-// Send status update function with loader and note entry
-function sendStatusUpdate(submissionId) {
-    const status = $(`#status-select-${submissionId}`).val();
-    if (!status) return alert("Please select a status.");
-
-    $(`#status-loader-${submissionId}`).show();
-    $(`#status-check-${submissionId}`).hide();
-
-    $.ajax({
-        url: `/api/submissions/${submissionId}/status`,
-        method: 'POST',
-        contentType: 'application/json',
-        data: JSON.stringify({ status }),
-        success: function () {
-            $(`#status-loader-${submissionId}`).hide();
-            $(`#status-check-${submissionId}`).show();
-            setTimeout(() => $(`#status-check-${submissionId}`).hide(), 2000);
-            saveNoteWithStatus(submissionId, `Status updated to ${status}`);
-        },
-        error: function () {
-            $(`#status-loader-${submissionId}`).hide();
-            alert('Failed to send status update.');
-        }
-    });
-}
-
-// Save a note specifically for a status update
-function saveNoteWithStatus(submissionId, note) {
-    $.ajax({
-        url: `/api/submissions/${submissionId}/note`,
-        method: 'POST',
-        contentType: 'application/json',
-        data: JSON.stringify({ note }),
-        success: function () {
-            loadNotes(submissionId); // Reload notes section
-        },
-        error: function () {
-            alert('Failed to save status update note.');
-        }
-    });
-}
-
-// "Time ago" formatter function using Moment.js to calculate based on server time
-function formatTimeAgo(timestamp) {
-    const time = moment.utc(timestamp);  // Convert timestamp to UTC moment
-    return time.local().fromNow();       // Convert to local time and format as "time ago"
-}
-$(document).ready(function () {
-    // Existing code...
-
-    // Display theme toggle options on settings icon click
-    $('#settingsIcon').click(function () {
-        $('#themeToggle').toggle();
-    });
-
-    // Dark mode activation
-    $('#darkModeBtn').click(function () {
-        $('body').addClass('dark-mode');
-        $('#themeToggle').hide();
-    });
-
-    // Light mode activation
-    $('#lightModeBtn').click(function () {
-        $('body').removeClass('dark-mode');
-        $('#themeToggle').hide();
-    });
-});

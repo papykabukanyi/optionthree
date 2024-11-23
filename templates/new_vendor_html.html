@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>New Vendor Signup</title>
+</head>
+<body>
+    <h2>New Vendor Signup Notification</h2>
+    <p>A new vendor has signed up with the following details:</p>
+    <ul>
+        <li><strong>Name:</strong> {{ first_name }} {{ last_name }}</li>
+        <li><strong>Business Name:</strong> {{ business_name }}</li>
+        <li><strong>Type of Business:</strong> {{ business_type }}</li>
+        <li><strong>Phone:</strong> {{ phone }}</li>
+        <li><strong>Email:</strong> {{ email }}</li>
+        <li><strong>Address:</strong> {{ address_line1 }} {{ address_line2 }}<br>
+            {{ city }}, {{ state }} {{ zip_code }}</li>
+    </ul>
+</body>
+</html>
