@@ -201,6 +201,33 @@ form .form-row .input-data {
     font-size: 14px;
 }
 
+.document-requirements {
+    margin: 15px 20px;
+    font-size: 14px;
+    color: #3d3d3d;
+}
+
+.document-requirements p {
+    margin-bottom: 8px;
+}
+
+.document-requirements ul {
+    list-style-type: disc;
+    margin-left: 20px;
+    margin-bottom: 12px;
+}
+
+.document-requirements li {
+    margin-bottom: 8px;
+    line-height: 1.4;
+}
+
+.document-requirements .note {
+    font-style: italic;
+    color: #666;
+    font-size: 13px;
+}
+
 /* Responsive styling */
 @media (max-width: 800px) {
     .container {
