@@ -1,10 +1,12 @@
 [build]
-builder = "NIXPACKS"
+builder = "DOCKERFILE"
 
 [deploy]
 runtime = "V2"
 numReplicas = 1
 startCommand = "gunicorn app:app"
 sleepApplication = false
+healthcheckPath = "/"
+healthcheckTimeout = 100
 restartPolicyType = "ON_FAILURE"
 restartPolicyMaxRetries = 10
