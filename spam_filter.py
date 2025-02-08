@@ -1,79 +1,129 @@
-# New spam_filter.py file
+# spam_filter.py
 import re
 from typing import Dict, List, Tuple
 import langdetect
-from profanity_check import predict_prob
+import nltk
+from nltk.tokenize import word_tokenize
+from nltk.corpus import stopwords
+import logging
+
+# Download required NLTK data
+try:
+    nltk.download('punkt', quiet=True)
+    nltk.download('stopwords', quiet=True)
+    nltk.download('averaged_perceptron_tagger', quiet=True)
+except Exception as e:
+    logging.warning(f"NLTK download failed: {e}")
 
 class SpamFilter:
     def __init__(self):
-        # Common spam trigger words/phrases
         self.spam_triggers = [
             'casino', 'viagra', 'crypto', 'bitcoin', 'lottery', 
             'winner', 'investment opportunity', 'forex trading',
             'make money fast', 'work from home', 'earn extra cash',
             'binary options', 'dear sir', 'dear madam', 'dear beneficiary',
             'inheritance', 'bank transfer', 'wire transfer',
-            'congratulations you won', 'claim your prize'
+            'congratulations you won', 'claim your prize', 'darkweb',
+            'million dollar', 'instant cash', 'dating', 'singles',
+            'weight loss', 'diet pills', 'enlarge', 'pharmacy',
+            'replica watches', 'buy meds', 'online pharmacy'
         ]
         
-        # Business financing related legitimate words
         self.legitimate_words = [
             'loan', 'business', 'financing', 'equipment', 'funding',
             'capital', 'investment', 'interest rate', 'payment',
             'credit', 'application', 'monthly payment', 'down payment',
-            'business plan', 'cash flow', 'invoice', 'revenue'
+            'business plan', 'cash flow', 'invoice', 'revenue',
+            'lease', 'purchase', 'machine', 'manufacturing', 'industry',
+            'commercial', 'enterprise', 'company', 'corporation'
         ]
 
-    def check_message(self, data: Dict) -> Tuple[bool, List[str]]:
-        """
-        Returns (is_spam: bool, reasons: List[str])
-        """
-        reasons = []
+        self.inappropriate_words = {
+            'adult', 'explicit', 'nsfw', 'xxx', 'porn',
+            'sex', 'naked', 'nude', 'drugs', 'pills'
+        }
+
+    def analyze_text_structure(self, text: str) -> List[str]:
+        """Analyze text structure for spam indicators"""
+        issues = []
         
-        # 1. Check message length
-        if len(data['message']) < 10:
-            reasons.append("Message too short")
-        
-        # 2. Check language
+        # Check sentence structure using NLTK
         try:
-            lang = langdetect.detect(data['message'])
+            tokens = word_tokenize(text)
+            if len(tokens) < 3:
+                issues.append("Too few words")
+            
+            # Check for excessive punctuation
+            punct_count = sum(1 for c in text if c in '!?.')
+            if punct_count / len(text) > 0.1:
+                issues.append("Excessive punctuation")
+            
+            # Check for repeated words
+            words = [word.lower() for word in tokens if word.isalnum()]
+            word_freq = {word: words.count(word) for word in set(words)}
+            if any(count > 3 for count in word_freq.values()):
+                issues.append("Word repetition")
+                
+        except Exception as e:
+            logging.error(f"Text analysis error: {e}")
+            
+        return issues
+
+    def check_message(self, data: Dict) -> Tuple[bool, List[str]]:
+        """Returns (is_spam: bool, reasons: List[str])"""
+        reasons = []
+        message = data.get('message', '').lower()
+        
+        # Basic validation
+        if not message or len(message) < 10:
+            return True, ["Message too short"]
+        
+        try:
+            # 1. Language detection
+            lang = langdetect.detect(message)
             if lang != 'en':
                 reasons.append(f"Non-English content detected ({lang})")
-        except:
-            reasons.append("Unable to determine language")
 
-        # 3. Check for spam trigger words
-        message_lower = data['message'].lower()
-        spam_words = [word for word in self.spam_triggers 
-                     if word in message_lower]
-        if spam_words:
-            reasons.append(f"Spam trigger words found: {', '.join(spam_words)}")
+            # 2. Spam trigger words
+            spam_words = [word for word in self.spam_triggers 
+                         if word in message]
+            if spam_words:
+                reasons.append(f"Spam triggers: {', '.join(spam_words)}")
 
-        # 4. Check for legitimate business terms
-        legitimate_count = sum(1 for word in self.legitimate_words 
-                             if word in message_lower)
-        if legitimate_count == 0:
-            reasons.append("No business-related terms found")
+            # 3. Business terminology check
+            legitimate_count = sum(1 for word in self.legitimate_words 
+                                if word in message)
+            if legitimate_count == 0:
+                reasons.append("No business-related terms")
 
-        # 5. Check email format
-        email_pattern = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
-        if not re.match(email_pattern, data['email']):
-            reasons.append("Invalid email format")
+            # 4. Email validation
+            email = data.get('email', '')
+            email_pattern = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
+            if not re.match(email_pattern, email):
+                reasons.append("Invalid email format")
 
-        # 6. Check phone number format
-        phone_pattern = r'^\+?1?\d{9,15}$'
-        if not re.match(phone_pattern, data['phone_number']):
-            reasons.append("Invalid phone number format")
+            # 5. Phone number validation
+            phone = data.get('phone_number', '')
+            phone_cleaned = re.sub(r'\D', '', phone)
+            if not (9 <= len(phone_cleaned) <= 15):
+                reasons.append("Invalid phone number")
 
-        # 7. Check profanity/toxicity
-        profanity_score = predict_prob([data['message']])[0]
-        if profanity_score > 0.5:
-            reasons.append(f"High profanity score: {profanity_score:.2f}")
+            # 6. Text structure analysis
+            structure_issues = self.analyze_text_structure(message)
+            reasons.extend(structure_issues)
 
-        # 8. Check for excessive capitals
-        caps_ratio = sum(1 for c in data['message'] if c.isupper()) / len(data['message'])
-        if caps_ratio > 0.5:
-            reasons.append("Excessive use of capital letters")
+            # 7. Check for inappropriate content
+            inappropriate = any(word in message for word in self.inappropriate_words)
+            if inappropriate:
+                reasons.append("Inappropriate content")
 
-        # Message is considered spam if it has any reasons
+            # 8. URL density check
+            urls = re.findall(r'http[s]?://\S+', message)
+            if len(urls) > 2:
+                reasons.append("Too many URLs")
+
+        except Exception as e:
+            logging.error(f"Spam check error: {e}")
+            reasons.append("Error in spam detection")
+
         return bool(reasons), reasons

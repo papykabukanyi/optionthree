@@ -26,6 +26,7 @@ from database import (
     insert_note, insert_communication, get_submission_by_id, get_notes, insert_reply, get_replies
 )
 from spam_filter import SpamFilter
+from slack_utils import SlackNotifier
 
 # Setup logging
 logging.basicConfig(level=logging.DEBUG)
@@ -47,20 +48,12 @@ if not os.path.exists(app.config['UPLOAD_FOLDER']):
 # Allow any file type for uploads
 def allowed_file(filename):
     return '.' in filename
+# Initialize Slack notifier
+slack_notifier = SlackNotifier()
 # Helper function to send Slack notifications
 def send_slack_notification(message):
     """Send a notification message to Slack."""
-    if SLACK_WEBHOOK_URL:
-        payload = {
-            "text": message
-        }
-        try:
-            response = requests.post(SLACK_WEBHOOK_URL, json=payload)
-            response.raise_for_status()
-        except requests.exceptions.RequestException as e:
-            logging.error(f"Failed to send Slack notification: {e}")
-    else:
-        logging.warning("Slack webhook URL not configured.")
+    slack_notifier.send_notification(message, level='info', additional_data={'type': 'form_submission'})
 # Helper function to send emails
 def send_email(to_email, subject, html_content, attachments=[]):
     sender_email = os.getenv('SENDER_EMAIL')
@@ -211,7 +204,7 @@ def submit_form():
             send_email(admin_email, "New Application Submitted", "A new application has been submitted.", [pdf_filename] + uploaded_files)
         # Send Slack notification
         slack_message = f"📩 New application submitted by {form_data.get('borrower_first_name', '')} {form_data.get('borrower_last_name', '')}. Application ID: {app_id}"
-        send_slack_notification(slack_message)
+        slack_notifier.send_notification(slack_message, level='info', additional_data={'type': 'form_submission'})
         flash('Form submitted successfully!')
         return redirect(url_for('congratulation'))
     except Exception as e:
@@ -298,7 +291,7 @@ def send_email_route():
             f"Email: {form_data['email']}\n"
             f"Phone: {form_data['phone_number']}"
         )
-        send_slack_notification(slack_message)
+        slack_notifier.send_notification(slack_message, level='info', additional_data={'type': 'form_submission'})
 
         flash('Message sent successfully!')
         return redirect(url_for('email_sent'))
