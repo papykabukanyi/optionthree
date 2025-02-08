@@ -29,7 +29,18 @@ from spam_filter import SpamFilter
 from slack_utils import SlackNotifier
 
 # Setup logging
-logging.basicConfig(level=logging.DEBUG)
+logging.basicConfig(
+    level=logging.DEBUG,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+)
+
+# Load environment variables
+load_dotenv()
+
+# Initialize global instances
+spam_filter = SpamFilter()
+slack_notifier = SlackNotifier()
+
 # Slack webhook URL
 SLACK_WEBHOOK_URL = os.getenv('SLACK_WEBHOOK_URL')
 # Load environment variables
@@ -237,22 +248,23 @@ def send_email_route():
     try:
         # Collect form data
         form_data = {
-            'full_name': request.form['full_name'],
-            'email': request.form['email'],
-            'phone_number': request.form['phone_number'],
-            'message': request.form['message']
+            'full_name': request.form.get('full_name'),
+            'email': request.form.get('email'),
+            'phone_number': request.form.get('phone_number'),
+            'message': request.form.get('message')
         }
+
+        # Log the incoming request
+        logging.info(f"Processing contact form submission from {form_data['email']}")
 
         # Check for spam
         is_spam, spam_reasons = spam_filter.check_message(form_data)
-
         if is_spam:
-            # Log spam attempt but return success to user
             logging.warning(f"Spam detected from {form_data['email']}: {spam_reasons}")
             flash('Message sent successfully!')
             return redirect(url_for('email_sent'))
 
-        # Prepare email content
+        # Prepare and send email
         sender_email = os.getenv('SENDER_EMAIL')
         sender_password = os.getenv('SENDER_PASSWORD')
         receiver_emails = [os.getenv('RECEIVER_EMAIL_1'), os.getenv('RECEIVER_EMAIL_2')]
@@ -260,9 +272,8 @@ def send_email_route():
         msg = MIMEMultipart()
         msg['From'] = sender_email
         msg['To'] = ", ".join(receiver_emails)
-        msg['Subject'] = f"New Contact Form: {form_data['full_name']}"
+        msg['Subject'] = f"New Contact Form Submission from {form_data['full_name']}"
 
-        # Create HTML body
         html_body = f"""
         <html>
             <body>
@@ -282,16 +293,41 @@ def send_email_route():
         with smtplib.SMTP('smtp.gmail.com', 587) as server:
             server.starttls()
             server.login(sender_email, sender_password)
-            server.sendmail(sender_email, receiver_emails, msg.as_string())
+            server.send_message(msg)
+            logging.info(f"Email sent successfully to {receiver_emails}")
 
-        # Send Slack notification for legitimate contact
+        # Send Slack notification with retries
         slack_message = (
-            f"✉️ New contact form submission\n"
-            f"From: {form_data['full_name']}\n"
-            f"Email: {form_data['email']}\n"
-            f"Phone: {form_data['phone_number']}"
+            "<!channel> 🔔 *New Contact Form Submission*\n"
+            f"*From:* {form_data['full_name']}\n"
+            f"*Email:* {form_data['email']}\n"
+            f"*Phone:* {form_data['phone_number']}\n"
+            f"*Message:* {form_data['message']}\n\n"
+            "@naisha @martha Please review this submission."
         )
-        slack_notifier.send_notification(slack_message, level='info', additional_data={'type': 'form_submission'})
+
+        # Attempt to send Slack notification with retries
+        max_retries = 3
+        for attempt in range(max_retries):
+            try:
+                success = slack_notifier.send_notification(
+                    slack_message,
+                    level='info',
+                    additional_data={
+                        'type': 'contact_form',
+                        'name': form_data['full_name'],
+                        'email': form_data['email']
+                    }
+                )
+                if success:
+                    logging.info("Slack notification sent successfully")
+                    break
+                else:
+                    logging.warning(f"Slack notification failed on attempt {attempt + 1}")
+            except Exception as e:
+                logging.error(f"Slack error on attempt {attempt + 1}: {e}")
+                if attempt == max_retries - 1:
+                    logging.error("All Slack notification attempts failed")
 
         flash('Message sent successfully!')
         return redirect(url_for('email_sent'))

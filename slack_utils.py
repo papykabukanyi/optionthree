@@ -10,6 +10,7 @@ class SlackNotifier:
     def __init__(self):
         self.webhook_url = os.getenv('SLACK_WEBHOOK_URL')
         self.enabled = bool(self.webhook_url)
+        logging.info(f"Slack notifications {'enabled' if self.enabled else 'disabled'}")
         
     def send_notification(self, 
                          message: str, 
@@ -24,43 +25,46 @@ class SlackNotifier:
             return False
             
         try:
-            color = {
-                'info': '#36a64f',
-                'warning': '#ff9400',
-                'error': '#ff0000'
-            }.get(level, '#36a64f')
-
+            logging.debug(f"Sending Slack notification to {self.webhook_url[:20]}...")
+            
             payload = {
-                "attachments": [{
-                    "color": color,
-                    "blocks": [
-                        {
-                            "type": "section",
-                            "text": {
-                                "type": "mrkdwn",
-                                "text": message
-                            }
+                "blocks": [
+                    {
+                        "type": "section",
+                        "text": {
+                            "type": "mrkdwn",
+                            "text": message
                         }
-                    ],
-                    "footer": "Hempire Enterprise",
-                    "ts": str(int(datetime.now().timestamp()))
-                }]
+                    }
+                ]
             }
 
             if additional_data:
-                payload["attachments"][0]["fields"] = [
-                    {"title": k, "value": str(v), "short": True}
-                    for k, v in additional_data.items()
-                ]
+                fields = []
+                for k, v in additional_data.items():
+                    fields.append({
+                        "type": "mrkdwn",
+                        "text": f"*{k}:* {v}"
+                    })
+                
+                payload["blocks"].append({
+                    "type": "section",
+                    "fields": fields
+                })
 
             response = requests.post(
                 self.webhook_url,
-                data=json.dumps(payload),
+                json=payload,
                 headers={'Content-Type': 'application/json'},
-                timeout=5
+                timeout=10
             )
-            response.raise_for_status()
-            return True
+            
+            if response.status_code == 200:
+                logging.info("Slack notification sent successfully")
+                return True
+            else:
+                logging.error(f"Slack API error: {response.status_code} - {response.text}")
+                return False
 
         except Exception as e:
             logging.error(f"Slack notification failed: {e}")
