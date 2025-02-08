@@ -24,3 +24,9 @@ apscheduler==3.9.1.post1
 # Update reportlab line to:
 reportlab==3.6.12; platform_system != "Linux"
 reportlab==3.6.12; platform_system == "Linux" and platform_machine == "x86_64"
+
+# Spam Detection and Text Processing
+langdetect==1.0.9
+profanity-check==1.0.3
+nltk==3.8.1
+scikit-learn==1.4.1.post1

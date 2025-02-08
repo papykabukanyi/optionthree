@@ -25,6 +25,8 @@ from database import (
     init_db, insert_submission, get_submissions, delete_submission, generate_app_id,
     insert_note, insert_communication, get_submission_by_id, get_notes, insert_reply, get_replies
 )
+from spam_filter import SpamFilter
+
 # Setup logging
 logging.basicConfig(level=logging.DEBUG)
 # Slack webhook URL
@@ -239,33 +241,72 @@ def about():
     return render_template("about.html")
 @app.route('/send_email', methods=['POST'])
 def send_email_route():
-    full_name = request.form['full_name']
-    email = request.form['email']
-    phone_number = request.form['phone_number']
-    message = request.form['message']
-    sender_email = os.getenv('SENDER_EMAIL')
-    sender_password = os.getenv('SENDER_PASSWORD')
-    receiver_emails = [os.getenv('RECEIVER_EMAIL_1'), os.getenv('RECEIVER_EMAIL_2')]
-    msg = MIMEMultipart()
-    msg['From'] = sender_email
-    msg['To'] = ", ".join(receiver_emails)
-    msg['Subject'] = "New Contact Form Submission"
-    body = f"Name: {full_name}\nEmail: {email}\nPhone: {phone_number}\nMessage: {message}"
-    msg.attach(MIMEText(body, 'plain'))
     try:
-        server = smtplib.SMTP('smtp.gmail.com', 587)
-        server.starttls()
-        server.login(sender_email, sender_password)
-        server.sendmail(sender_email, receiver_emails, msg.as_string())
-        server.quit()
-        flash('Message sent successfully!')
-               # Send Slack notification for contact form submission
-        slack_message = f"📧 New contact form submission from {full_name}. Email: {email}. Phone: {phone_number}."
+        # Collect form data
+        form_data = {
+            'full_name': request.form['full_name'],
+            'email': request.form['email'],
+            'phone_number': request.form['phone_number'],
+            'message': request.form['message']
+        }
+
+        # Check for spam
+        is_spam, spam_reasons = spam_filter.check_message(form_data)
+
+        if is_spam:
+            # Log spam attempt but return success to user
+            logging.warning(f"Spam detected from {form_data['email']}: {spam_reasons}")
+            flash('Message sent successfully!')
+            return redirect(url_for('email_sent'))
+
+        # Prepare email content
+        sender_email = os.getenv('SENDER_EMAIL')
+        sender_password = os.getenv('SENDER_PASSWORD')
+        receiver_emails = [os.getenv('RECEIVER_EMAIL_1'), os.getenv('RECEIVER_EMAIL_2')]
+
+        msg = MIMEMultipart()
+        msg['From'] = sender_email
+        msg['To'] = ", ".join(receiver_emails)
+        msg['Subject'] = f"New Contact Form: {form_data['full_name']}"
+
+        # Create HTML body
+        html_body = f"""
+        <html>
+            <body>
+                <h2>New Contact Form Submission</h2>
+                <p><strong>Name:</strong> {form_data['full_name']}</p>
+                <p><strong>Email:</strong> {form_data['email']}</p>
+                <p><strong>Phone:</strong> {form_data['phone_number']}</p>
+                <h3>Message:</h3>
+                <p>{form_data['message']}</p>
+            </body>
+        </html>
+        """
+
+        msg.attach(MIMEText(html_body, 'html'))
+
+        # Send email
+        with smtplib.SMTP('smtp.gmail.com', 587) as server:
+            server.starttls()
+            server.login(sender_email, sender_password)
+            server.sendmail(sender_email, receiver_emails, msg.as_string())
+
+        # Send Slack notification for legitimate contact
+        slack_message = (
+            f"✉️ New contact form submission\n"
+            f"From: {form_data['full_name']}\n"
+            f"Email: {form_data['email']}\n"
+            f"Phone: {form_data['phone_number']}"
+        )
         send_slack_notification(slack_message)
+
+        flash('Message sent successfully!')
+        return redirect(url_for('email_sent'))
+
     except Exception as e:
-        logging.error(f"Failed to send contact email: {e}")
+        logging.error(f"Failed to process contact form: {e}")
         flash('Failed to send message. Please try again later.')
-    return redirect(url_for('email_sent'))
+        return redirect(url_for('contact'))
 @app.route('/email_sent.html')
 def email_sent():
     return render_template('email_sent.html')
