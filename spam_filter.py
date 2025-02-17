@@ -4,8 +4,9 @@ from typing import Dict, List, Tuple
 import langdetect
 import nltk
 from nltk.tokenize import word_tokenize
-from nltk.corpus import stopwords
+from collections import Counter
 import logging
+import time
 
 # Download required NLTK data
 try:
@@ -18,30 +19,85 @@ except Exception as e:
 class SpamFilter:
     def __init__(self):
         self.spam_triggers = [
-            'casino', 'viagra', 'crypto', 'bitcoin', 'lottery', 
-            'winner', 'investment opportunity', 'forex trading',
-            'make money fast', 'work from home', 'earn extra cash',
-            'binary options', 'dear sir', 'dear madam', 'dear beneficiary',
-            'inheritance', 'bank transfer', 'wire transfer',
-            'congratulations you won', 'claim your prize', 'darkweb',
-            'million dollar', 'instant cash', 'dating', 'singles',
-            'weight loss', 'diet pills', 'enlarge', 'pharmacy',
-            'replica watches', 'buy meds', 'online pharmacy'
-        ]
-        
-        self.legitimate_words = [
-            'loan', 'business', 'financing', 'equipment', 'funding',
-            'capital', 'investment', 'interest rate', 'payment',
-            'credit', 'application', 'monthly payment', 'down payment',
-            'business plan', 'cash flow', 'invoice', 'revenue',
-            'lease', 'purchase', 'machine', 'manufacturing', 'industry',
-            'commercial', 'enterprise', 'company', 'corporation'
+            # Existing triggers +
+            'casino', 'viagra', 'crypto', 'bitcoin', 'lottery',
+            # New financial scam terms
+            'investment opportunity', 'forex', 'binary options', 'quick cash',
+            'earn from home', 'money back guarantee', 'risk-free investment',
+            # Suspicious phrases
+            'dear friend', 'dear beneficiary', 'congratulations you',
+            'won lottery', 'inheritance claim', 'bank transfer',
+            # Medical/pharma spam
+            'discount meds', 'online pharmacy', 'cheap pills', 'buy prescription',
+            # Crypto/finance 
+            'cryptocurrency', 'blockchain', 'ico', 'token sale', 'mining rig',
+            # Adult content
+            'dating site', 'meet singles', 'adult friend', 'hot singles'
         ]
 
-        self.inappropriate_words = {
-            'adult', 'explicit', 'nsfw', 'xxx', 'porn',
-            'sex', 'naked', 'nude', 'drugs', 'pills'
-        }
+        # Increased legitimate business terms
+        self.legitimate_words = [
+            'loan', 'business', 'financing', 'equipment', 'funding',
+            'capital', 'investment', 'interest rate', 'payment terms',
+            'credit application', 'monthly payment', 'down payment',
+            'business plan', 'cash flow', 'invoice', 'revenue projections',
+            'lease terms', 'purchase order', 'manufacturing', 'industry',
+            'commercial', 'enterprise', 'incorporation', 'tax id',
+            'ein number', 'business license', 'vendor', 'supplier'
+        ]
+
+        self.spam_patterns = [
+            r'\d+%\s*(ROI|return|profit)',  # ROI promises
+            r'[A-Z]{5,}',  # EXCESSIVE CAPS
+            r'[\$€£]\d+[KkMm]?(?:\s*[-+]\s*[\$€£]\d+[KkMm]?)*', # Money amounts
+            r'(?:bit\.ly|tinyurl\.com|goo\.gl)\/\w+',  # Short URLs
+            r'(?:password|account|login|bank)\s*details?',  # Suspicious requests
+            r'\b(?:viagra|cialis|pharmacy)\b',  # Pharma spam
+            r'\b(?:crypto|bitcoin|eth|bnb)\b',  # Crypto terms
+            r'(?:urgent|immediate)\s*(?:reply|response|action)',  # Urgency
+            r'(?:free|bonus|discount)\s*(?:offer|gift|prize)',  # Promotional
+            r'(?:million|billion|trillion)\s*dollars?' # Large amounts
+        ]
+
+        self.url_blacklist = [
+            'bit.ly', 'tinyurl.com', 'goo.gl', 'ow.ly', 't.co',
+            'darkweb', 'crypto', 'btc', 'eth', 'nft'
+        ]
+
+        self.rate_limit = {}
+        self.rate_window = 3600  # 1 hour
+        self.max_attempts = 5
+
+    def check_rate_limit(self, sender: str) -> bool:
+        """Check if sender has exceeded rate limit"""
+        current_time = time.time()
+        if sender in self.rate_limit:
+            attempts, first_attempt = self.rate_limit[sender]
+            if current_time - first_attempt > self.rate_window:
+                self.rate_limit[sender] = (1, current_time)
+                return False
+            if attempts >= self.max_attempts:
+                return True
+            self.rate_limit[sender] = (attempts + 1, first_attempt)
+        else:
+            self.rate_limit[sender] = (1, current_time)
+        return False
+
+    def analyze_urls(self, message: str) -> List[str]:
+        """Enhanced URL analysis"""
+        issues = []
+        urls = re.findall(r'http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*\\(\\),]|(?:%[0-9a-fA-F][0-9a-fA-F]))+', message)
+        
+        if len(urls) > 3:
+            issues.append("Excessive URLs detected")
+            
+        for url in urls:
+            if any(blacklisted in url.lower() for blacklisted in self.url_blacklist):
+                issues.append(f"Suspicious URL detected: {url}")
+            if url.count('.') > 3:
+                issues.append(f"Complex URL structure: {url}")
+                
+        return issues
 
     def analyze_text_structure(self, text: str) -> List[str]:
         """Analyze text structure for spam indicators"""
@@ -70,60 +126,60 @@ class SpamFilter:
         return issues
 
     def check_message(self, data: Dict) -> Tuple[bool, List[str]]:
-        """Returns (is_spam: bool, reasons: List[str])"""
+        """Enhanced spam detection"""
         reasons = []
         message = data.get('message', '').lower()
-        
-        # Basic validation
+        sender = data.get('email', '')
+
         if not message or len(message) < 10:
             return True, ["Message too short"]
-        
-        try:
-            # 1. Language detection
-            lang = langdetect.detect(message)
-            if lang != 'en':
-                reasons.append(f"Non-English content detected ({lang})")
 
-            # 2. Spam trigger words
-            spam_words = [word for word in self.spam_triggers 
-                         if word in message]
+        # Rate limiting
+        if self.check_rate_limit(sender):
+            return True, ["Rate limit exceeded"]
+
+        try:
+            # Language detection
+            if langdetect.detect(message) != 'en':
+                reasons.append("Non-English content detected")
+
+            # Pattern matching
+            for pattern in self.spam_patterns:
+                if re.search(pattern, message, re.I):
+                    reasons.append(f"Suspicious pattern detected: {pattern}")
+
+            # Spam trigger words
+            spam_words = [word for word in self.spam_triggers if word in message]
             if spam_words:
                 reasons.append(f"Spam triggers: {', '.join(spam_words)}")
 
-            # 3. Business terminology check
-            legitimate_count = sum(1 for word in self.legitimate_words 
-                                if word in message)
+            # URL analysis
+            url_issues = self.analyze_urls(message)
+            reasons.extend(url_issues)
+
+            # Content analysis
+            words = word_tokenize(message.lower())
+            word_freq = Counter(words)
+
+            # Check word repetition
+            if any(count > 5 for count in word_freq.values()):
+                reasons.append("Excessive word repetition")
+
+            # Check character repetition
+            if any(message.count(char) > len(message) * 0.1 for char in '!?.$@'):
+                reasons.append("Excessive special characters")
+
+            # Check for legitimate business content
+            legitimate_count = sum(1 for word in self.legitimate_words if word in message)
             if legitimate_count == 0:
                 reasons.append("No business-related terms")
-
-            # 4. Email validation
-            email = data.get('email', '')
-            email_pattern = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
-            if not re.match(email_pattern, email):
-                reasons.append("Invalid email format")
-
-            # 5. Phone number validation
-            phone = data.get('phone_number', '')
-            phone_cleaned = re.sub(r'\D', '', phone)
-            if not (9 <= len(phone_cleaned) <= 15):
-                reasons.append("Invalid phone number")
-
-            # 6. Text structure analysis
-            structure_issues = self.analyze_text_structure(message)
-            reasons.extend(structure_issues)
-
-            # 7. Check for inappropriate content
-            inappropriate = any(word in message for word in self.inappropriate_words)
-            if inappropriate:
-                reasons.append("Inappropriate content")
-
-            # 8. URL density check
-            urls = re.findall(r'http[s]?://\S+', message)
-            if len(urls) > 2:
-                reasons.append("Too many URLs")
 
         except Exception as e:
             logging.error(f"Spam check error: {e}")
             reasons.append("Error in spam detection")
 
-        return bool(reasons), reasons
+        # Scoring
+        spam_score = len(reasons)
+        is_spam = spam_score >= 2
+
+        return is_spam, reasons
