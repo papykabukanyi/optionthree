@@ -46,7 +46,7 @@ SLACK_WEBHOOK_URL = os.getenv('SLACK_WEBHOOK_URL')
 # Load environment variables
 load_dotenv()
 # Flask app setup
-app = Flask(__name__)
+app = Flask(__name__, static_folder='static')
 socketio = SocketIO(app)
 app.config['UPLOAD_FOLDER'] = os.path.join(os.getcwd(), 'uploads')
 app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16 MB limit
