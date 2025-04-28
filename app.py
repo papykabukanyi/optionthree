@@ -222,6 +222,48 @@ def submit_form():
         logging.error(f"Error during form submission: {e}")
         flash('An error occurred while processing your submission.')
         return redirect(url_for('form'))
+# PNW Form submission route - mirroring submit_form
+@app.route('/submit_pnwform', methods=['POST'])
+def submit_pnwform():
+    form_data = request.form.to_dict()
+    files = request.files.getlist('files')
+    uploaded_files = []
+    try:
+        for file in files:
+            if file and allowed_file(file.filename):
+                filename = secure_filename(file.filename)
+                file_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+                file.save(file_path)
+                uploaded_files.append(file_path)
+        submission_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        browser = request.user_agent.string
+        ip_address = request.remote_addr
+        app_id = generate_app_id()
+        # Create PDF
+        pdf_filename = create_pdf(form_data, uploaded_files, submission_time, browser, ip_address, str(uuid.uuid4()), 'PNW Vendor', app_id)
+        form_data['uploaded_files'] = [os.path.basename(file) for file in uploaded_files]
+        form_data['pdf_filename'] = os.path.basename(pdf_filename)
+        form_data['app_id'] = app_id
+        # Save to database
+        insert_submission(app_id, form_data, submission_time)
+        # Send email to borrower
+        borrower_email = form_data.get('borrower_email')
+        if borrower_email:
+            borrower_email_template = render_template('borrower_email_template.html', borrower_name=form_data.get('borrower_first_name'), app_id=app_id)
+            send_email(borrower_email, "Application Submitted", borrower_email_template)
+        # Send email to admin with attachments
+        admin_emails = [os.getenv('RECEIVER_EMAIL_1'), os.getenv('RECEIVER_EMAIL_2')]
+        for admin_email in admin_emails:
+            send_email(admin_email, "New Application Submitted", "A new application has been submitted.", [pdf_filename] + uploaded_files)
+        # Send Slack notification
+        slack_message = f"📩 New PNW application submitted by {form_data.get('borrower_first_name', '')} {form_data.get('borrower_last_name', '')}. Application ID: {app_id}"
+        slack_notifier.send_notification(slack_message, level='info', additional_data={'type': 'form_submission'})
+        flash('Form submitted successfully!')
+        return redirect(url_for('congratulation'))
+    except Exception as e:
+        logging.error(f"Error during form submission: {e}")
+        flash('An error occurred while processing your submission.')
+        return redirect(url_for('pnwform'))
 @app.route('/')
 @app.route('/index')
 @app.route('/index.html')
@@ -231,6 +273,10 @@ def index():
 @app.route('/form.html')
 def form():
     return render_template('form.html')
+@app.route('/pnwform')
+@app.route('/pnwform.html')
+def pnwform():
+    return render_template('pnwform.html')
 @app.route("/contact")
 @app.route("/contact.html")
 def contact():
