@@ -13,6 +13,7 @@ instance/
 
 # Environment variables
 .env
+.env.*
 service-account-file.json
 
 
@@ -44,9 +45,11 @@ __pycache__/
 
 # Ignore environment files
 .env
+.env.*
 
 # Ignore uploads directory
 uploads/
 
 # Ignore the API documentation file
-api-documentation.md".history/" 
+api-documentation.md
+.history/
