@@ -851,37 +851,8 @@ def submit_mcaloan():
             if pdf_path:
                 send_mca_application_emails(app_id, form_data, pdf_path, uploaded_files)
             
-            # Create comprehensive Slack notification with all fields
-            slack_message = f"""🔔 *New MCA Loan Application*
-*Application ID:* {app_id}
-
-*BUSINESS INFORMATION*
-• Company Name: {company_name}
-• Business Type: {form_data.get('business_type', 'N/A')}
-• Business Industry: {business_industry}
-• Time in Business: {form_data.get('time_in_business', 'N/A')}
-• Address: {borrower_address_line_1}, {borrower_city}, {borrower_state} {borrower_zip_code}
-• Company Email: {form_data.get('company_email', 'N/A')}
-• Company Phone: {form_data.get('company_phone', 'N/A')}
-• EIN/TAX ID: {form_data.get('ein', 'N/A')}
-
-*BORROWER INFORMATION*
-• Name: {borrower_first_name} {borrower_last_name}
-• Email: {borrower_email}
-• Phone: {borrower_phone}
-• DOB: {form_data.get('borrower_dob', 'N/A')}
-• SSN: {form_data.get('borrower_ssn', 'N/A')} (last 4)
-• Ownership: {form_data.get('borrower_ownership', 'N/A')}
-
-*LOAN DETAILS*
-• Amount Requested: {amount_requested}
-• Term Length: {term_length}
-• Credit Score Range: {credit_score_range}
-
-*ATTACHMENTS*
-• Files Uploaded: {len(uploaded_files)}"""
-
             # Send Slack notification
+            slack_message = f"New MCA Loan Application received!\nBusiness: {company_name}\nApplicant: {borrower_first_name} {borrower_last_name}\nEmail: {borrower_email}\nAmount Requested: {amount_requested}\nCredit Score Range: {credit_score_range}"
             send_slack_notification(slack_message)
             
             # Redirect to success page

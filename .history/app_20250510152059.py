@@ -183,25 +183,24 @@ def create_mca_pdf(data, files, submission_time, browser, ip_address, unique_id,
         # Create PDF with watermark
         class PDFWithWatermark(FPDF):
             def header(self):
-                # Add company logo in the top-right corner to avoid obstructing text
-                self.image('static/assets/img/Logo.png', 170, 8, 30)
+                # Add company logo
+                self.image('static/assets/img/Logo.png', 10, 8, 33)
                 
-                # Add watermark that doesn't obstruct text
-                self.set_font('Arial', 'B', 50)
-                self.set_text_color(240, 240, 240)  # Very light gray for subtle watermark
+                # Add watermark
+                self.set_font('Arial', 'B', 40)
+                self.set_text_color(230, 230, 230)  # Light gray
                 
                 # Save the current position
                 x, y = self.get_x(), self.get_y()
                 
-                # Center watermark diagonally across page
-                self.rotate(45, 105, 140)
-                self.text(30, 190, 'HEMPIRE ENTERPRISE')
+                # Calculate center of page for watermark
+                self.rotate(45, 105, 120)
+                self.text(55, 190, 'HEMPIRE ENTERPRISE')
                 
                 # Restore position and text color
                 self.rotate(0)
                 self.set_xy(x, y)
                 self.set_text_color(0, 0, 0)  # Reset text color to black
-                self.ln(40)  # Add some space after the header
                 
         # Create PDF
         pdf = PDFWithWatermark()
@@ -851,37 +850,8 @@ def submit_mcaloan():
             if pdf_path:
                 send_mca_application_emails(app_id, form_data, pdf_path, uploaded_files)
             
-            # Create comprehensive Slack notification with all fields
-            slack_message = f"""🔔 *New MCA Loan Application*
-*Application ID:* {app_id}
-
-*BUSINESS INFORMATION*
-• Company Name: {company_name}
-• Business Type: {form_data.get('business_type', 'N/A')}
-• Business Industry: {business_industry}
-• Time in Business: {form_data.get('time_in_business', 'N/A')}
-• Address: {borrower_address_line_1}, {borrower_city}, {borrower_state} {borrower_zip_code}
-• Company Email: {form_data.get('company_email', 'N/A')}
-• Company Phone: {form_data.get('company_phone', 'N/A')}
-• EIN/TAX ID: {form_data.get('ein', 'N/A')}
-
-*BORROWER INFORMATION*
-• Name: {borrower_first_name} {borrower_last_name}
-• Email: {borrower_email}
-• Phone: {borrower_phone}
-• DOB: {form_data.get('borrower_dob', 'N/A')}
-• SSN: {form_data.get('borrower_ssn', 'N/A')} (last 4)
-• Ownership: {form_data.get('borrower_ownership', 'N/A')}
-
-*LOAN DETAILS*
-• Amount Requested: {amount_requested}
-• Term Length: {term_length}
-• Credit Score Range: {credit_score_range}
-
-*ATTACHMENTS*
-• Files Uploaded: {len(uploaded_files)}"""
-
             # Send Slack notification
+            slack_message = f"New MCA Loan Application received!\nBusiness: {company_name}\nApplicant: {borrower_first_name} {borrower_last_name}\nEmail: {borrower_email}\nAmount Requested: {amount_requested}\nCredit Score Range: {credit_score_range}"
             send_slack_notification(slack_message)
             
             # Redirect to success page

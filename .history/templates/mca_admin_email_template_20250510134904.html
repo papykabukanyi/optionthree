@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <style>
+        body { font-family: Arial, sans-serif; }
+        h2 { color: #333366; }
+        table { border-collapse: collapse; width: 100%; }
+        th, td { padding: 8px; text-align: left; border-bottom: 1px solid #ddd; }
+        th { background-color: #f2f2f2; }
+    </style>
+</head>
+<body>
+    <h2>New MCA Loan Application</h2>
+    <p>A new MCA loan application has been submitted with the following details:</p>
+    
+    <h3>Application Details:</h3>
+    <table>
+        <tr>
+            <th>Application ID</th>
+            <td>{{ app_id }}</td>
+        </tr>
+        <tr>
+            <th>Business Name</th>
+            <td>{{ company_name }}</td>
+        </tr>
+        <tr>
+            <th>Business Industry</th>
+            <td>{{ business_industry }}</td>
+        </tr>
+        <tr>
+            <th>Applicant Name</th>
+            <td>{{ borrower_first_name }} {{ borrower_last_name }}</td>
+        </tr>
+        <tr>
+            <th>Email</th>
+            <td>{{ borrower_email }}</td>
+        </tr>
+        <tr>
+            <th>Phone</th>
+            <td>{{ borrower_phone }}</td>
+        </tr>
+        <tr>
+            <th>Address</th>
+            <td>{{ borrower_address_line_1 }}, {{ borrower_city }}, {{ borrower_state }} {{ borrower_zip_code }}</td>
+        </tr>
+        <tr>
+            <th>Amount Requested</th>
+            <td>{{ amount_requested }}</td>
+        </tr>
+        <tr>
+            <th>Term Length</th>
+            <td>{{ term_length }}</td>
+        </tr>
+        <tr>
+            <th>Credit Score Range</th>
+            <td>{{ credit_score_range }}</td>
+        </tr>
+    </table>
+    
+    <p>Please see the attached PDF for complete application details.</p>
+    
+    <p>This is an automated email. Please do not reply to this email.</p>
+</body>
+</html>

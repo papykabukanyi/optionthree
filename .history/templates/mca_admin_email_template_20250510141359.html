@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <style>
+        body { font-family: Arial, sans-serif; }
+        h2 { color: #333366; }
+        table { border-collapse: collapse; width: 100%; }
+        th, td { padding: 8px; text-align: left; border-bottom: 1px solid #ddd; }
+        th { background-color: #f2f2f2; width: 40%; font-weight: bold; }
+        .section-header { 
+            background-color: #333366; 
+            color: white; 
+            padding: 10px; 
+            margin-top: 20px; 
+            font-size: 16px; 
+        }
+    </style>
+</head>
+<body>
+    <h2>New MCA Loan Application</h2>
+    <p>A new MCA loan application has been submitted with the following details:</p>
+    
+    <h3>Application Details:</h3>
+    <table>
+        <tr>
+            <th>Application ID</th>
+            <td>{{ app_id }}</td>
+        </tr>
+    </table>
+    
+    <div class="section-header">Business Information</div>
+    <table>
+        <tr>
+            <th>Company Name</th>
+            <td>{{ company_name }}</td>
+        </tr>
+        <tr>
+            <th>Time in Business</th>
+            <td>{{ time_in_business }}</td>
+        </tr>
+        <tr>
+            <th>Business Industry</th>
+            <td>{{ business_industry }}</td>
+        </tr>
+        <tr>
+            <th>Business Type</th>
+            <td>{{ business_type }}</td>
+        </tr>
+        <tr>
+            <th>EIN/TAX ID</th>
+            <td>{{ ein }}</td>
+        </tr>
+        <tr>
+            <th>Address</th>
+            <td>{{ address_line_1 }}, {{ city }}, {{ state }} {{ zip_code }}</td>
+        </tr>
+        <tr>
+            <th>Company Email</th>
+            <td>{{ company_email }}</td>
+        </tr>
+        <tr>
+            <th>Company Phone</th>
+            <td>{{ company_phone }}</td>
+        </tr>
+    </table>
+    
+    <div class="section-header">Borrower Information</div>
+    <table>
+        <tr>
+            <th>Name</th>
+            <td>{{ borrower_first_name }} {{ borrower_last_name }}</td>
+        </tr>
+        <tr>
+            <th>Date of Birth</th>
+            <td>{{ borrower_dob }}</td>
+        </tr>
+        <tr>
+            <th>Percent Ownership</th>
+            <td>{{ borrower_ownership }}</td>
+        </tr>
+        <tr>
+            <th>SSN</th>
+            <td>{{ borrower_ssn }}</td>
+        </tr>
+        <tr>
+            <th>Email</th>
+            <td>{{ borrower_email }}</td>
+        </tr>
+        <tr>
+            <th>Phone</th>
+            <td>{{ borrower_phone }}</td>
+        </tr>
+        <tr>
+            <th>Preferred Contact Method</th>
+            <td>{{ borrower_preferred_contact }}</td>
+        </tr>
+        <tr>
+            <th>Address</th>
+            <td>{{ borrower_address_line_1 }}, {{ borrower_city }}, {{ borrower_state }} {{ borrower_zip_code }}</td>
+        </tr>
+    </table>
+    
+    {% if coapplicant_first_name or coapplicant_last_name %}
+    <div class="section-header">Co-Applicant Information</div>
+    <table>
+        <tr>
+            <th>Name</th>
+            <td>{{ coapplicant_first_name }} {{ coapplicant_last_name }}</td>
+        </tr>
+        <tr>
+            <th>Date of Birth</th>
+            <td>{{ coapplicant_dob }}</td>
+        </tr>
+        <tr>
+            <th>Percent Ownership</th>
+            <td>{{ coapplicant_ownership }}</td>
+        </tr>
+        <tr>
+            <th>SSN</th>
+            <td>{{ coapplicant_ssn }}</td>
+        </tr>
+        <tr>
+            <th>Email</th>
+            <td>{{ coapplicant_email }}</td>
+        </tr>
+        <tr>
+            <th>Phone</th>
+            <td>{{ coapplicant_phone }}</td>
+        </tr>
+        <tr>
+            <th>Preferred Contact Method</th>
+            <td>{{ coapplicant_preferred_contact }}</td>
+        </tr>
+        <tr>
+            <th>Address</th>
+            <td>{{ coapplicant_address_line_1 }}, {{ coapplicant_city }}, {{ coapplicant_state }} {{ coapplicant_zip_code }}</td>
+        </tr>
+    </table>
+    {% endif %}
+    
+    <div class="section-header">Loan Request Information</div>
+    <table>
+        <tr>
+            <th>Amount Requested</th>
+            <td>{{ amount_requested }}</td>
+        </tr>
+        <tr>
+            <th>Term Length</th>
+            <td>{{ term_length }}</td>
+        </tr>
+        <tr>
+            <th>Credit Score Range</th>
+            <td>{{ credit_score_range }}</td>
+        </tr>
+    </table>
+    
+    <p><strong>Please see the attached files:</strong></p>
+    <ol>
+        <li>MCA Loan Application PDF with all details</li>
+        <li>Any bank statements or documents uploaded by the applicant</li>
+    </ol>
+    
+    <p><em>This is an automated email. Please do not reply to this email.</em></p>
+</body>
+</html>

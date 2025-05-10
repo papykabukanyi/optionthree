@@ -64,13 +64,8 @@ def allowed_file(filename):
 slack_notifier = SlackNotifier()
 # Helper function to send Slack notifications
 def send_slack_notification(message):
-    """Send a notification message to Slack with better error handling."""
-    try:
-        slack_notifier.send_notification(message, level='info', additional_data={'type': 'form_submission'})
-        logging.info("Slack notification sent successfully")
-    except Exception as e:
-        logging.error(f"Failed to send Slack notification: {str(e)}")
-        # The error is logged but won't stop the application flow
+    """Send a notification message to Slack."""
+    slack_notifier.send_notification(message, level='info', additional_data={'type': 'form_submission'})
 # Helper function to send emails
 def send_email(to_email, subject, html_content, attachments=[]):
     sender_email = os.getenv('SENDER_EMAIL')
@@ -179,34 +174,35 @@ def create_pdf(data, files, submission_time, browser, ip_address, unique_id, loc
         return None
 # Function to create PDF for MCA loan application
 def create_mca_pdf(data, files, submission_time, browser, ip_address, unique_id, location, app_id):
-    try:
-        # Create PDF with watermark
-        class PDFWithWatermark(FPDF):
-            def header(self):
-                # Add company logo in the top-right corner to avoid obstructing text
-                self.image('static/assets/img/Logo.png', 170, 8, 30)
-                
-                # Add watermark that doesn't obstruct text
-                self.set_font('Arial', 'B', 50)
-                self.set_text_color(240, 240, 240)  # Very light gray for subtle watermark
-                
-                # Save the current position
-                x, y = self.get_x(), self.get_y()
-                
-                # Center watermark diagonally across page
-                self.rotate(45, 105, 140)
-                self.text(30, 190, 'HEMPIRE ENTERPRISE')
-                
-                # Restore position and text color
-                self.rotate(0)
-                self.set_xy(x, y)
-                self.set_text_color(0, 0, 0)  # Reset text color to black
-                self.ln(40)  # Add some space after the header
-                
+    # try:
+        # Create fonts directory if it doesn't exist
+        fonts_dir = os.path.join('static', 'assets', 'fonts')
+        if not os.path.exists(fonts_dir):
+            os.makedirs(fonts_dir)
+        
+        # Download DejaVu fonts if they don't exist
+        dejavu_regular = os.path.join(fonts_dir, 'DejaVuSansCondensed.ttf')
+        dejavu_bold = os.path.join(fonts_dir, 'DejaVuSansCondensed-Bold.ttf')
+        
+        if not os.path.exists(dejavu_regular):
+            import urllib.request
+            urllib.request.urlretrieve(
+                'https://github.com/dejavu-fonts/dejavu-fonts/raw/master/ttf/DejaVuSansCondensed.ttf',
+                dejavu_regular
+            )
+        
+        if not os.path.exists(dejavu_bold):
+            import urllib.request
+            urllib.request.urlretrieve(
+                'https://github.com/dejavu-fonts/dejavu-fonts/raw/master/ttf/DejaVuSansCondensed-Bold.ttf',
+                dejavu_bold
+            )
+        
         # Create PDF
-        pdf = PDFWithWatermark()
+        pdf = FPDF()
         pdf.set_auto_page_break(auto=True, margin=15)
         pdf.add_page()
+        pdf.set_font("Arial", size=12)
         
         # Title
         pdf.set_fill_color(240, 240, 240)  # Light gray background for title
@@ -235,7 +231,7 @@ def create_mca_pdf(data, files, submission_time, browser, ip_address, unique_id,
             # Handle potential None values or empty strings
             display_value = value if value else "N/A"
             # Replace any unicode characters with ASCII equivalents
-            display_value = str(display_value).replace('\u2022', '-')
+            display_value = display_value.replace('\u2022', '-')
             pdf.multi_cell(130, height, display_value, 0, 'L')
         
         # Business Information fields
@@ -367,39 +363,24 @@ def create_mca_pdf(data, files, submission_time, browser, ip_address, unique_id,
             
         pdf_filename = os.path.join(pdf_folder, f"MCA_Loan_Application_{unique_id}.pdf")
         pdf.output(pdf_filename)
-        
-        # Verify the PDF was created successfully
-        if os.path.exists(pdf_filename) and os.path.getsize(pdf_filename) > 0:
-            logging.info(f"PDF created successfully: {pdf_filename}")
-            return pdf_filename
-        else:
-            logging.error(f"PDF file was not created or is empty: {pdf_filename}")
-            return None
-        
+        return pdf_filename
+    
     except Exception as e:
         logging.error(f"Error creating PDF: {str(e)}")
         # Create a simple fallback PDF with minimal text content
-        try:
-            pdf = FPDF()
-            pdf.add_page()
-            pdf.set_font("Arial", size=12)
-            pdf.cell(0, 10, f"MCA Loan Application - {app_id}", 0, 1)
-            pdf.cell(0, 10, f"Application Date: {submission_time.strftime('%m/%d/%Y %H:%M')}", 0, 1)
-            pdf.cell(0, 10, f"Business: {data.get('company_name', 'N/A')}", 0, 1)
-            pdf.cell(0, 10, f"Applicant: {data.get('borrower_first_name', '')} {data.get('borrower_last_name', '')}", 0, 1)
-            pdf.cell(0, 10, f"Email: {data.get('borrower_email', 'N/A')}", 0, 1)
-            pdf.cell(0, 10, f"Amount: {data.get('amount_requested', 'N/A')}", 0, 1)
+        pdf = FPDF()
+        pdf.add_page()
+        pdf.set_font("Arial", size=12)
+        pdf.cell(0, 10, f"MCA Loan Application - {app_id}", 0, 1)
+        pdf.cell(0, 10, f"Error creating detailed PDF. Please check logs.", 0, 1)
+        
+        pdf_folder = os.path.join(app.config['UPLOAD_FOLDER'], unique_id)
+        if not os.path.exists(pdf_folder):
+            os.makedirs(pdf_folder)
             
-            pdf_folder = os.path.join(app.config['UPLOAD_FOLDER'], unique_id)
-            if not os.path.exists(pdf_folder):
-                os.makedirs(pdf_folder)
-                
-            pdf_filename = os.path.join(pdf_folder, f"MCA_Loan_Application_{unique_id}.pdf")
-            pdf.output(pdf_filename)
-            return pdf_filename
-        except Exception as inner_e:
-            logging.error(f"Error creating fallback PDF: {str(inner_e)}")
-            return None
+        pdf_filename = os.path.join(pdf_folder, f"MCA_Loan_Application_{unique_id}.pdf")
+        pdf.output(pdf_filename)
+        return pdf_filename
 # Route to delete a submission from the database
 @app.route('/api/submissions/<int:submission_id>', methods=['DELETE'])
 def api_delete_submission(submission_id):
@@ -444,7 +425,7 @@ def submit_form():
             send_email(admin_email, "New Application Submitted", "A new application has been submitted.", [pdf_filename] + uploaded_files)
         # Send Slack notification
         slack_message = f"📩 New application submitted by {form_data.get('borrower_first_name', '')} {form_data.get('borrower_last_name', '')}. Application ID: {app_id}"
-        send_slack_notification(slack_message)
+        slack_notifier.send_notification(slack_message, level='info', additional_data={'type': 'form_submission'})
         flash('Form submitted successfully!')
         return redirect(url_for('congratulation'))
     except Exception as e:
@@ -486,7 +467,7 @@ def submit_pnwform():
             send_email(admin_email, "New Application Submitted", "A new application has been submitted.", [pdf_filename] + uploaded_files)
         # Send Slack notification
         slack_message = f"📩 New PNW application submitted by {form_data.get('borrower_first_name', '')} {form_data.get('borrower_last_name', '')}. Application ID: {app_id}"
-        send_slack_notification(slack_message)
+        slack_notifier.send_notification(slack_message, level='info', additional_data={'type': 'form_submission'})
         flash('Form submitted successfully!')
         return redirect(url_for('congratulation'))
     except Exception as e:
@@ -851,37 +832,8 @@ def submit_mcaloan():
             if pdf_path:
                 send_mca_application_emails(app_id, form_data, pdf_path, uploaded_files)
             
-            # Create comprehensive Slack notification with all fields
-            slack_message = f"""🔔 *New MCA Loan Application*
-*Application ID:* {app_id}
-
-*BUSINESS INFORMATION*
-• Company Name: {company_name}
-• Business Type: {form_data.get('business_type', 'N/A')}
-• Business Industry: {business_industry}
-• Time in Business: {form_data.get('time_in_business', 'N/A')}
-• Address: {borrower_address_line_1}, {borrower_city}, {borrower_state} {borrower_zip_code}
-• Company Email: {form_data.get('company_email', 'N/A')}
-• Company Phone: {form_data.get('company_phone', 'N/A')}
-• EIN/TAX ID: {form_data.get('ein', 'N/A')}
-
-*BORROWER INFORMATION*
-• Name: {borrower_first_name} {borrower_last_name}
-• Email: {borrower_email}
-• Phone: {borrower_phone}
-• DOB: {form_data.get('borrower_dob', 'N/A')}
-• SSN: {form_data.get('borrower_ssn', 'N/A')} (last 4)
-• Ownership: {form_data.get('borrower_ownership', 'N/A')}
-
-*LOAN DETAILS*
-• Amount Requested: {amount_requested}
-• Term Length: {term_length}
-• Credit Score Range: {credit_score_range}
-
-*ATTACHMENTS*
-• Files Uploaded: {len(uploaded_files)}"""
-
             # Send Slack notification
+            slack_message = f"New MCA Loan Application received!\nBusiness: {company_name}\nApplicant: {borrower_first_name} {borrower_last_name}\nEmail: {borrower_email}\nAmount Requested: {amount_requested}\nCredit Score Range: {credit_score_range}"
             send_slack_notification(slack_message)
             
             # Redirect to success page

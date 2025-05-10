@@ -64,13 +64,8 @@ def allowed_file(filename):
 slack_notifier = SlackNotifier()
 # Helper function to send Slack notifications
 def send_slack_notification(message):
-    """Send a notification message to Slack with better error handling."""
-    try:
-        slack_notifier.send_notification(message, level='info', additional_data={'type': 'form_submission'})
-        logging.info("Slack notification sent successfully")
-    except Exception as e:
-        logging.error(f"Failed to send Slack notification: {str(e)}")
-        # The error is logged but won't stop the application flow
+    """Send a notification message to Slack."""
+    slack_notifier.send_notification(message, level='info', additional_data={'type': 'form_submission'})
 # Helper function to send emails
 def send_email(to_email, subject, html_content, attachments=[]):
     sender_email = os.getenv('SENDER_EMAIL')
@@ -177,229 +172,6 @@ def create_pdf(data, files, submission_time, browser, ip_address, unique_id, loc
     else:
         logging.error(f"Failed to generate PDF {pdf_filename}")
         return None
-# Function to create PDF for MCA loan application
-def create_mca_pdf(data, files, submission_time, browser, ip_address, unique_id, location, app_id):
-    try:
-        # Create PDF with watermark
-        class PDFWithWatermark(FPDF):
-            def header(self):
-                # Add company logo in the top-right corner to avoid obstructing text
-                self.image('static/assets/img/Logo.png', 170, 8, 30)
-                
-                # Add watermark that doesn't obstruct text
-                self.set_font('Arial', 'B', 50)
-                self.set_text_color(240, 240, 240)  # Very light gray for subtle watermark
-                
-                # Save the current position
-                x, y = self.get_x(), self.get_y()
-                
-                # Center watermark diagonally across page
-                self.rotate(45, 105, 140)
-                self.text(30, 190, 'HEMPIRE ENTERPRISE')
-                
-                # Restore position and text color
-                self.rotate(0)
-                self.set_xy(x, y)
-                self.set_text_color(0, 0, 0)  # Reset text color to black
-                self.ln(40)  # Add some space after the header
-                
-        # Create PDF
-        pdf = PDFWithWatermark()
-        pdf.set_auto_page_break(auto=True, margin=15)
-        pdf.add_page()
-        
-        # Title
-        pdf.set_fill_color(240, 240, 240)  # Light gray background for title
-        pdf.set_font("Arial", 'B', 18)
-        pdf.cell(190, 15, "MCA LOAN APPLICATION", 1, 1, 'C', fill=True)
-        pdf.ln(5)
-        
-        # Application ID and Date with better formatting
-        pdf.set_font("Arial", 'B', 12)
-        pdf.cell(95, 10, f"Application ID: {app_id}", 0, 0, 'L')
-        pdf.cell(95, 10, f"Date: {submission_time.strftime('%m/%d/%Y %H:%M')}", 0, 1, 'R')
-        pdf.line(10, pdf.get_y(), 200, pdf.get_y())
-        pdf.ln(5)
-        
-        # Business Information section with styled heading
-        pdf.set_font("Arial", 'B', 16)
-        pdf.set_fill_color(210, 210, 210)  # Darker gray for section headers
-        pdf.cell(190, 10, "Business Information", 0, 1, 'L', fill=True)
-        pdf.ln(2)
-        
-        # Create a function for adding field-value pairs with consistent formatting
-        def add_field(field_name, value, height=8):
-            pdf.set_font("Arial", 'B', 11)
-            pdf.cell(60, height, field_name, 0, 0)
-            pdf.set_font("Arial", '', 11)
-            # Handle potential None values or empty strings
-            display_value = value if value else "N/A"
-            # Replace any unicode characters with ASCII equivalents
-            display_value = str(display_value).replace('\u2022', '-')
-            pdf.multi_cell(130, height, display_value, 0, 'L')
-        
-        # Business Information fields
-        add_field("Company Name:", data.get('company_name', ''))
-        add_field("Time in Business:", data.get('time_in_business', ''))
-        add_field("Business Industry:", data.get('business_industry', ''))
-        add_field("Business Type:", data.get('business_type', ''))
-        add_field("EIN/TAX ID:", data.get('ein', ''))
-        
-        # Address with better formatting
-        business_address = f"{data.get('address_line_1', '')}, {data.get('city', '')}, {data.get('state', '')} {data.get('zip_code', '')}"
-        add_field("Address:", business_address)
-        
-        add_field("Company Email:", data.get('company_email', ''))
-        add_field("Company Phone:", data.get('company_phone', ''))
-        
-        # Borrower Information section
-        pdf.ln(5)
-        pdf.set_font("Arial", 'B', 16)
-        pdf.set_fill_color(210, 210, 210)
-        pdf.cell(190, 10, "Borrower Information", 0, 1, 'L', fill=True)
-        pdf.ln(2)
-        
-        # Borrower Information fields
-        borrower_name = f"{data.get('borrower_first_name', '')} {data.get('borrower_last_name', '')}"
-        add_field("Name:", borrower_name)
-        add_field("Date of Birth:", data.get('borrower_dob', ''))
-        add_field("Percent Ownership:", data.get('borrower_ownership', ''))
-        add_field("SSN:", data.get('borrower_ssn', ''))
-        add_field("Email:", data.get('borrower_email', ''))
-        add_field("Phone:", data.get('borrower_phone', ''))
-        add_field("Preferred Contact:", data.get('borrower_preferred_contact', ''))
-        
-        # Borrower address
-        borrower_address = f"{data.get('borrower_address_line_1', '')}, {data.get('borrower_city', '')}, {data.get('borrower_state', '')} {data.get('borrower_zip_code', '')}"
-        add_field("Address:", borrower_address)
-        
-        # Co-Applicant Information (if provided)
-        if data.get('coapplicant_first_name') or data.get('coapplicant_last_name'):
-            pdf.ln(5)
-            pdf.set_font("Arial", 'B', 16)
-            pdf.set_fill_color(210, 210, 210)
-            pdf.cell(190, 10, "Co-Applicant Information", 0, 1, 'L', fill=True)
-            pdf.ln(2)
-            
-            # Co-Applicant fields
-            coapplicant_name = f"{data.get('coapplicant_first_name', '')} {data.get('coapplicant_last_name', '')}"
-            add_field("Name:", coapplicant_name)
-            add_field("Date of Birth:", data.get('coapplicant_dob', ''))
-            add_field("Percent Ownership:", data.get('coapplicant_ownership', ''))
-            add_field("SSN:", data.get('coapplicant_ssn', ''))
-            add_field("Email:", data.get('coapplicant_email', ''))
-            add_field("Phone:", data.get('coapplicant_phone', ''))
-            add_field("Preferred Contact:", data.get('coapplicant_preferred_contact', ''))
-            
-            # Co-applicant address
-            coapplicant_address = f"{data.get('coapplicant_address_line_1', '')}, {data.get('coapplicant_city', '')}, {data.get('coapplicant_state', '')} {data.get('coapplicant_zip_code', '')}"
-            add_field("Address:", coapplicant_address)
-        
-        # Loan Request Information section
-        pdf.ln(5)
-        pdf.set_font("Arial", 'B', 16)
-        pdf.set_fill_color(210, 210, 210)
-        pdf.cell(190, 10, "Loan Request Information", 0, 1, 'L', fill=True)
-        pdf.ln(2)
-        
-        # Loan information fields
-        add_field("Amount Requested:", data.get('amount_requested', ''))
-        add_field("Term Length:", data.get('term_length', ''))
-        add_field("Credit Score Range:", data.get('credit_score_range', ''))
-        
-        # Uploaded Files section
-        pdf.ln(5)
-        pdf.set_font("Arial", 'B', 16)
-        pdf.set_fill_color(210, 210, 210)
-        pdf.cell(190, 10, "Uploaded Files", 0, 1, 'L', fill=True)
-        pdf.ln(2)
-        
-        # List uploaded files
-        if files:
-            for file in files:
-                filename = os.path.basename(file)
-                pdf.set_font("Arial", '', 10)
-                pdf.cell(190, 8, "- " + filename, 0, 1)
-        else:
-            pdf.set_font("Arial", 'I', 11)
-            pdf.cell(190, 8, "No files uploaded", 0, 1)
-        
-        # Submission Information section
-        pdf.ln(5)
-        pdf.set_font("Arial", 'B', 16)
-        pdf.set_fill_color(210, 210, 210)
-        pdf.cell(190, 10, "Submission Information", 0, 1, 'L', fill=True)
-        pdf.ln(2)
-        
-        # Submission details
-        add_field("Browser:", browser)
-        add_field("IP Address:", ip_address)
-        add_field("Location:", location)
-        
-        # Handle signature if present
-        if 'signature' in data and data.get('signature'):
-            try:
-                signature_data = data.get('signature', '').split(',')[1]
-                signature_path = os.path.join(app.config['UPLOAD_FOLDER'], f"{app_id}_signature.png")
-                
-                with open(signature_path, "wb") as fh:
-                    fh.write(base64.b64decode(signature_data))
-                
-                pdf.ln(5)
-                pdf.set_font("Arial", 'B', 16)
-                pdf.set_fill_color(210, 210, 210)
-                pdf.cell(190, 10, "Signature", 0, 1, 'L', fill=True)
-                pdf.ln(5)
-                pdf.image(signature_path, 10, pdf.get_y(), 60)
-                pdf.ln(30)  # Space for the signature
-            except Exception as e:
-                logging.error(f"Error processing signature: {e}")
-        
-        # Add footer with page numbers
-        pdf.set_y(-15)
-        pdf.set_font('Arial', 'I', 8)
-        pdf.cell(0, 10, f'Page {pdf.page_no()}', 0, 0, 'C')
-        
-        # Save PDF
-        pdf_folder = os.path.join(app.config['UPLOAD_FOLDER'], unique_id)
-        if not os.path.exists(pdf_folder):
-            os.makedirs(pdf_folder)
-            
-        pdf_filename = os.path.join(pdf_folder, f"MCA_Loan_Application_{unique_id}.pdf")
-        pdf.output(pdf_filename)
-        
-        # Verify the PDF was created successfully
-        if os.path.exists(pdf_filename) and os.path.getsize(pdf_filename) > 0:
-            logging.info(f"PDF created successfully: {pdf_filename}")
-            return pdf_filename
-        else:
-            logging.error(f"PDF file was not created or is empty: {pdf_filename}")
-            return None
-        
-    except Exception as e:
-        logging.error(f"Error creating PDF: {str(e)}")
-        # Create a simple fallback PDF with minimal text content
-        try:
-            pdf = FPDF()
-            pdf.add_page()
-            pdf.set_font("Arial", size=12)
-            pdf.cell(0, 10, f"MCA Loan Application - {app_id}", 0, 1)
-            pdf.cell(0, 10, f"Application Date: {submission_time.strftime('%m/%d/%Y %H:%M')}", 0, 1)
-            pdf.cell(0, 10, f"Business: {data.get('company_name', 'N/A')}", 0, 1)
-            pdf.cell(0, 10, f"Applicant: {data.get('borrower_first_name', '')} {data.get('borrower_last_name', '')}", 0, 1)
-            pdf.cell(0, 10, f"Email: {data.get('borrower_email', 'N/A')}", 0, 1)
-            pdf.cell(0, 10, f"Amount: {data.get('amount_requested', 'N/A')}", 0, 1)
-            
-            pdf_folder = os.path.join(app.config['UPLOAD_FOLDER'], unique_id)
-            if not os.path.exists(pdf_folder):
-                os.makedirs(pdf_folder)
-                
-            pdf_filename = os.path.join(pdf_folder, f"MCA_Loan_Application_{unique_id}.pdf")
-            pdf.output(pdf_filename)
-            return pdf_filename
-        except Exception as inner_e:
-            logging.error(f"Error creating fallback PDF: {str(inner_e)}")
-            return None
 # Route to delete a submission from the database
 @app.route('/api/submissions/<int:submission_id>', methods=['DELETE'])
 def api_delete_submission(submission_id):
@@ -444,7 +216,7 @@ def submit_form():
             send_email(admin_email, "New Application Submitted", "A new application has been submitted.", [pdf_filename] + uploaded_files)
         # Send Slack notification
         slack_message = f"📩 New application submitted by {form_data.get('borrower_first_name', '')} {form_data.get('borrower_last_name', '')}. Application ID: {app_id}"
-        send_slack_notification(slack_message)
+        slack_notifier.send_notification(slack_message, level='info', additional_data={'type': 'form_submission'})
         flash('Form submitted successfully!')
         return redirect(url_for('congratulation'))
     except Exception as e:
@@ -486,7 +258,7 @@ def submit_pnwform():
             send_email(admin_email, "New Application Submitted", "A new application has been submitted.", [pdf_filename] + uploaded_files)
         # Send Slack notification
         slack_message = f"📩 New PNW application submitted by {form_data.get('borrower_first_name', '')} {form_data.get('borrower_last_name', '')}. Application ID: {app_id}"
-        send_slack_notification(slack_message)
+        slack_notifier.send_notification(slack_message, level='info', additional_data={'type': 'form_submission'})
         flash('Form submitted successfully!')
         return redirect(url_for('congratulation'))
     except Exception as e:
@@ -577,7 +349,6 @@ def send_email_route():
             f"*From:* {form_data['full_name']}\n"
             f"*Email:* {form_data['email']}\n"
             f"*Phone:* {form_data['phone_number']}\n"
-
             f"*Message:* {form_data['message']}\n\n"
             "@naisha @martha Please review this submission."
         )
@@ -787,115 +558,218 @@ def mcaloanapplication():
 @app.route('/submit_mcaloan', methods=['POST'])
 def submit_mcaloan():
     if request.method == 'POST':
-        try:
-            # Generate a unique application ID
-            app_id = generate_app_id()
+        # Generate a unique application ID
+        app_id = generate_app_id()
+        
+        # Get form data
+        business_name = request.form.get('businessName')
+        business_industry = request.form.get('businessIndustry')
+        first_name = request.form.get('firstName')
+        middle_name = request.form.get('middleName', '')
+        last_name = request.form.get('lastName')
+        email = request.form.get('email')
+        phone = request.form.get('phone')
+        address = request.form.get('address')
+        city = request.form.get('city')
+        state = request.form.get('state')
+        zip_code = request.form.get('zipCode')
+        amount_requested = request.form.get('amountRequested')
+        term_length = request.form.get('termLength')
+        credit_score_range = request.form.get('creditScoreRange')
+        
+        # Get file uploads
+        bank_statements = request.files.getlist('bankStatements')
+        
+        # Prepare data for database
+        data = {
+            'business_name': business_name,
+            'business_industry': business_industry,
+            'first_name': first_name,
+            'middle_name': middle_name,
+            'last_name': last_name,
+            'email': email,
+            'phone': phone,
+            'address': address,
+            'city': city,
+            'state': state,
+            'zip_code': zip_code,
+            'amount_requested': amount_requested,
+            'term_length': term_length,
+            'credit_score_range': credit_score_range
+        }
+        
+        # Get current time
+        submission_time = datetime.now()
+        
+        # Save to database
+        submission_id = insert_mca_loan_application(
+            app_id, business_name, business_industry, first_name, middle_name, last_name,
+            email, phone, address, city, state, zip_code,
+            amount_requested, term_length, credit_score_range, data, submission_time
+        )
+        
+        # Get user's browser and IP information for tracking
+        user_agent = request.headers.get('User-Agent')
+        ip_address = request.remote_addr
+        location = "Unknown"  # You might want to use a geolocation API here
+        
+        # Save uploaded files
+        uploaded_files = []
+        if bank_statements:
+            file_folder = os.path.join(app.config['UPLOAD_FOLDER'], app_id)
+            if not os.path.exists(file_folder):
+                os.makedirs(file_folder)
             
-            # Get form data
-            form_data = request.form.to_dict()
-            
-            # Extract key fields needed for database
-            company_name = form_data.get('company_name')
-            business_industry = form_data.get('business_industry')
-            borrower_first_name = form_data.get('borrower_first_name')
-            borrower_last_name = form_data.get('borrower_last_name')
-            borrower_email = form_data.get('borrower_email')
-            borrower_phone = form_data.get('borrower_phone')
-            borrower_address_line_1 = form_data.get('borrower_address_line_1')
-            borrower_city = form_data.get('borrower_city')
-            borrower_state = form_data.get('borrower_state')
-            borrower_zip_code = form_data.get('borrower_zip_code')
-            amount_requested = form_data.get('amount_requested')
-            term_length = form_data.get('term_length')
-            credit_score_range = form_data.get('credit_score_range')
-            
-            # Get current time
-            submission_time = datetime.now()
-            
-            # Get user's browser and IP information for tracking
-            user_agent = request.headers.get('User-Agent')
-            ip_address = request.remote_addr
-            location = "Unknown"
-            
-            # Process file uploads
-            uploaded_files = []
-            files = request.files.getlist('files')
-            
-            if files:
-                file_folder = os.path.join(app.config['UPLOAD_FOLDER'], app_id)
-                if not os.path.exists(file_folder):
-                    os.makedirs(file_folder)
-                
-                for file in files:
-                    if file and file.filename and allowed_file(file.filename):
-                        try:
-                            filename = secure_filename(file.filename)
-                            file_path = os.path.join(file_folder, filename)
-                            file.save(file_path)
-                            uploaded_files.append(file_path)
-                            logging.info(f"Saved file: {file_path}")
-                        except Exception as e:
-                            logging.error(f"Error saving file {file.filename}: {e}")
-            
-            # Save to database
-            submission_id = insert_mca_loan_application(
-                app_id, company_name, business_industry, borrower_first_name, '', borrower_last_name,
-                borrower_email, borrower_phone, borrower_address_line_1, borrower_city, borrower_state, borrower_zip_code,
-                amount_requested, term_length, credit_score_range, form_data, submission_time
-            )
-            
-            # Create PDF of application
-            pdf_path = create_mca_pdf(form_data, uploaded_files, submission_time, user_agent, ip_address, app_id, location, app_id)
-            
-            # Send email notifications with PDF and all uploaded documents
-            if pdf_path:
-                send_mca_application_emails(app_id, form_data, pdf_path, uploaded_files)
-            
-            # Create comprehensive Slack notification with all fields
-            slack_message = f"""🔔 *New MCA Loan Application*
-*Application ID:* {app_id}
-
-*BUSINESS INFORMATION*
-• Company Name: {company_name}
-• Business Type: {form_data.get('business_type', 'N/A')}
-• Business Industry: {business_industry}
-• Time in Business: {form_data.get('time_in_business', 'N/A')}
-• Address: {borrower_address_line_1}, {borrower_city}, {borrower_state} {borrower_zip_code}
-• Company Email: {form_data.get('company_email', 'N/A')}
-• Company Phone: {form_data.get('company_phone', 'N/A')}
-• EIN/TAX ID: {form_data.get('ein', 'N/A')}
-
-*BORROWER INFORMATION*
-• Name: {borrower_first_name} {borrower_last_name}
-• Email: {borrower_email}
-• Phone: {borrower_phone}
-• DOB: {form_data.get('borrower_dob', 'N/A')}
-• SSN: {form_data.get('borrower_ssn', 'N/A')} (last 4)
-• Ownership: {form_data.get('borrower_ownership', 'N/A')}
-
-*LOAN DETAILS*
-• Amount Requested: {amount_requested}
-• Term Length: {term_length}
-• Credit Score Range: {credit_score_range}
-
-*ATTACHMENTS*
-• Files Uploaded: {len(uploaded_files)}"""
-
-            # Send Slack notification
-            send_slack_notification(slack_message)
-            
-            # Redirect to success page
-            return redirect(url_for('congratulation'))
-            
-        except Exception as e:
-            logging.error(f"Error processing MCA loan application: {str(e)}")
-            flash("An error occurred while processing your application. Please try again or contact support.")
-            return redirect(url_for('mcaloanapplication'))
+            for file in bank_statements:
+                if file and allowed_file(file.filename):
+                    filename = secure_filename(file.filename)
+                    file_path = os.path.join(file_folder, filename)
+                    file.save(file_path)
+                    uploaded_files.append(file_path)
+        
+        # Create PDF of application
+        pdf_path = create_mca_pdf(data, uploaded_files, submission_time, user_agent, ip_address, app_id, location, app_id)
+        
+        # Send email notifications
+        send_mca_application_emails(app_id, data, pdf_path)
+        
+        # Send Slack notification
+        slack_message = f"New MCA Loan Application received!\nBusiness: {business_name}\nApplicant: {first_name} {last_name}\nEmail: {email}\nAmount Requested: {amount_requested}\nCredit Score Range: {credit_score_range}"
+        send_slack_notification(slack_message)
+        
+        # Redirect to success page
+        return redirect(url_for('congratulation'))
     
     # If not POST, redirect to the form
     return redirect(url_for('mcaloanapplication'))
+# Function to create PDF for MCA loan application
+def create_mca_pdf(data, files, submission_time, browser, ip_address, unique_id, location, app_id):
+    pdf = FPDF()
+    pdf.add_page()
+    pdf.set_font("Arial", size=12)
+    pdf.image('static/assets/img/Logo.png', 10, 8, 33)
+    pdf.ln(15)
+    
+    # Title
+    pdf.set_font("Arial", 'B', 16)
+    pdf.cell(190, 10, "MCA Loan Application", ln=True, align='C')
+    pdf.set_font("Arial", size=12)
+    pdf.ln(5)
+    
+    # Application ID and Date
+    pdf.set_font("Arial", 'B', 12)
+    pdf.cell(95, 10, f"Application ID: {app_id}", ln=0)
+    pdf.cell(95, 10, f"Date: {submission_time.strftime('%m/%d/%Y %H:%M')}", ln=1)
+    pdf.ln(5)
+    
+    # Business Information
+    pdf.set_font("Arial", 'B', 14)
+    pdf.cell(190, 10, "Business Information", ln=True)
+    pdf.ln(2)
+    pdf.set_font("Arial", 'B', 12)
+    pdf.cell(60, 10, "Business Name:", ln=0)
+    pdf.set_font("Arial", size=12)
+    pdf.cell(130, 10, data['business_name'], ln=1)
+    
+    pdf.set_font("Arial", 'B', 12)
+    pdf.cell(60, 10, "Business Industry:", ln=0)
+    pdf.set_font("Arial", size=12)
+    pdf.cell(130, 10, data['business_industry'], ln=1)
+    
+    # Applicant Information
+    pdf.ln(5)
+    pdf.set_font("Arial", 'B', 14)
+    pdf.cell(190, 10, "Applicant Information", ln=True)
+    pdf.ln(2)
+    
+    pdf.set_font("Arial", 'B', 12)
+    pdf.cell(60, 10, "Name:", ln=0)
+    pdf.set_font("Arial", size=12)
+    full_name = f"{data['first_name']} {data['middle_name']} {data['last_name']}".replace("  ", " ")
+    pdf.cell(130, 10, full_name, ln=1)
+    
+    pdf.set_font("Arial", 'B', 12)
+    pdf.cell(60, 10, "Email:", ln=0)
+    pdf.set_font("Arial", size=12)
+    pdf.cell(130, 10, data['email'], ln=1)
+    
+    pdf.set_font("Arial", 'B', 12)
+    pdf.cell(60, 10, "Phone:", ln=0)
+    pdf.set_font("Arial", size=12)
+    pdf.cell(130, 10, data['phone'], ln=1)
+    
+    pdf.set_font("Arial", 'B', 12)
+    pdf.cell(60, 10, "Address:", ln=0)
+    pdf.set_font("Arial", size=12)
+    address = f"{data['address']}, {data['city']}, {data['state']} {data['zip_code']}"
+    pdf.cell(130, 10, address, ln=1)
+    
+    # Loan Request Information
+    pdf.ln(5)
+    pdf.set_font("Arial", 'B', 14)
+    pdf.cell(190, 10, "Loan Request Information", ln=True)
+    pdf.ln(2)
+    
+    pdf.set_font("Arial", 'B', 12)
+    pdf.cell(60, 10, "Amount Requested:", ln=0)
+    pdf.set_font("Arial", size=12)
+    pdf.cell(130, 10, data['amount_requested'], ln=1)
+    
+    pdf.set_font("Arial", 'B', 12)
+    pdf.cell(60, 10, "Term Length:", ln=0)
+    pdf.set_font("Arial", size=12)
+    pdf.cell(130, 10, data.get('term_length', 'Not specified'), ln=1)
+    
+    pdf.set_font("Arial", 'B', 12)
+    pdf.cell(60, 10, "Credit Score Range:", ln=0)
+    pdf.set_font("Arial", size=12)
+    pdf.cell(130, 10, data['credit_score_range'], ln=1)
+    
+    # Uploaded Files
+    pdf.ln(5)
+    pdf.set_font("Arial", 'B', 14)
+    pdf.cell(190, 10, "Uploaded Files", ln=True)
+    pdf.ln(2)
+    
+    if files:
+        for file in files:
+            filename = os.path.basename(file)
+            pdf.set_font("Arial", size=10)
+            pdf.cell(190, 10, filename, ln=1)
+    else:
+        pdf.set_font("Arial", 'I', 12)
+        pdf.cell(190, 10, "No files uploaded", ln=1)
+    
+    # Submission Information
+    pdf.ln(5)
+    pdf.set_font("Arial", 'B', 14)
+    pdf.cell(190, 10, "Submission Information", ln=True)
+    pdf.ln(2)
+    
+    pdf.set_font("Arial", 'B', 12)
+    pdf.cell(60, 10, "Browser:", ln=0)
+    pdf.set_font("Arial", size=10)
+    pdf.cell(130, 10, browser, ln=1)
+    
+    pdf.set_font("Arial", 'B', 12)
+    pdf.cell(60, 10, "IP Address:", ln=0)
+    pdf.set_font("Arial", size=10)
+    pdf.cell(130, 10, ip_address, ln=1)
+    
+    pdf.set_font("Arial", 'B', 12)
+    pdf.cell(60, 10, "Location:", ln=0)
+    pdf.set_font("Arial", size=10)
+    pdf.cell(130, 10, location, ln=1)
+    
+    # Save PDF
+    pdf_folder = os.path.join(app.config['UPLOAD_FOLDER'], unique_id)
+    if not os.path.exists(pdf_folder):
+        os.makedirs(pdf_folder)
+    pdf_filename = os.path.join(pdf_folder, f"MCA_Loan_Application_{unique_id}.pdf")
+    pdf.output(pdf_filename)
+    return pdf_filename
 # Function to send MCA application emails
-def send_mca_application_emails(app_id, data, pdf_path, uploaded_files=[]):
+def send_mca_application_emails(app_id, data, pdf_path):
     # Get sender info from environment variables
     sender_email = os.getenv('SENDER_EMAIL')
     receiver_email_1 = os.getenv('RECEIVER_EMAIL_1')
@@ -904,64 +778,123 @@ def send_mca_application_emails(app_id, data, pdf_path, uploaded_files=[]):
     # Email subject
     subject = f"New MCA Loan Application - {app_id}"
     
-    # Render admin email template with all form fields
-    try:
-        html_content = render_template('mca_admin_email_template.html', 
-                                      app_id=app_id, 
-                                      **data)
-    except Exception as e:
-        logging.error(f"Error rendering email template: {str(e)}")
-        html_content = f"""
-        <html>
-        <body>
-            <h2>New MCA Loan Application</h2>
-            <p>A new MCA loan application has been submitted with ID: {app_id}</p>
-            <p>Please see the attached files for all details.</p>
-        </body>
-        </html>
-        """
-    
-    # Combine PDF and uploaded files into one list of attachments
-    attachments = []
-    
-    # Add the PDF if it exists
-    if pdf_path and os.path.exists(pdf_path):
-        attachments.append(pdf_path)
+    # Email body
+    html_content = f"""
+    <html>
+    <head>
+        <style>
+            body {{ font-family: Arial, sans-serif; }}
+            h2 {{ color: #333366; }}
+            table {{ border-collapse: collapse; width: 100%; }}
+            th, td {{ padding: 8px; text-align: left; border-bottom: 1px solid #ddd; }}
+            th {{ background-color: #f2f2f2; }}
+        </style>
+    </head>
+    <body>
+        <h2>New MCA Loan Application</h2>
+        <p>A new MCA loan application has been submitted with the following details:</p>
         
-    # Add uploaded files if they exist
-    if uploaded_files:
-        for file_path in uploaded_files:
-            if os.path.exists(file_path):
-                attachments.append(file_path)
-    
-    # Count valid attachment count for logging
-    valid_attachment_count = len(attachments)
+        <h3>Application Details:</h3>
+        <table>
+            <tr>
+                <th>Application ID</th>
+                <td>{app_id}</td>
+            </tr>
+            <tr>
+                <th>Business Name</th>
+                <td>{data['business_name']}</td>
+            </tr>
+            <tr>
+                <th>Business Industry</th>
+                <td>{data['business_industry']}</td>
+            </tr>
+            <tr>
+                <th>Applicant Name</th>
+                <td>{data['first_name']} {data['middle_name']} {data['last_name']}</td>
+            </tr>
+            <tr>
+                <th>Email</th>
+                <td>{data['email']}</td>
+            </tr>
+            <tr>
+                <th>Phone</th>
+                <td>{data['phone']}</td>
+            </tr>
+            <tr>
+                <th>Address</th>
+                <td>{data['address']}, {data['city']}, {data['state']} {data['zip_code']}</td>
+            </tr>
+            <tr>
+                <th>Amount Requested</th>
+                <td>{data['amount_requested']}</td>
+            </tr>
+            <tr>
+                <th>Term Length</th>
+                <td>{data.get('term_length', 'Not specified')}</td>
+            </tr>
+            <tr>
+                <th>Credit Score Range</th>
+                <td>{data['credit_score_range']}</td>
+            </tr>
+        </table>
+        
+        <p>Please see the attached PDF for complete application details.</p>
+        
+        <p>This is an automated email. Please do not reply to this email.</p>
+    </body>
+    </html>
+    """
     
     # Send to first recipient
+    attachments = [pdf_path]
     try:
         send_email(receiver_email_1, subject, html_content, attachments)
-        logging.info(f"MCA application email sent to {receiver_email_1} with {valid_attachment_count} attachments")
     except Exception as e:
         logging.error(f"Failed to send email to {receiver_email_1}: {e}")
     
     # Send to second recipient
     try:
         send_email(receiver_email_2, subject, html_content, attachments)
-        logging.info(f"MCA application email sent to {receiver_email_2} with {valid_attachment_count} attachments")
     except Exception as e:
         logging.error(f"Failed to send email to {receiver_email_2}: {e}")
     
     # Send confirmation to applicant
     applicant_subject = f"Your MCA Loan Application - {app_id}"
+    applicant_html = f"""
+    <html>
+    <head>
+        <style>
+            body {{ font-family: Arial, sans-serif; line-height: 1.6; }}
+            .container {{ max-width: 600px; margin: 0 auto; }}
+            h2 {{ color: #333366; }}
+        </style>
+    </head>
+    <body>
+        <div class="container">
+            <h2>Thank You for Your MCA Loan Application</h2>
+            
+            <p>Dear {data['first_name']},</p>
+            
+            <p>Thank you for submitting your MCA loan application. We have received your application and are reviewing it.</p>
+            
+            <p><strong>Your Application ID:</strong> {app_id}</p>
+            
+            <p>Our team will review your application and get back to you as soon as possible. 
+            If we need any additional information, we'll contact you via email or phone.</p>
+            
+            <p>If you have any questions, please feel free to contact us.</p>
+            
+            <p>Best regards,<br>
+            Hempire Enterprise Team</p>
+        </div>
+    </body>
+    </html>
+    """
+    
     try:
-        applicant_html = render_template('mca_applicant_email_template.html',
-                                        app_id=app_id,
-                                        borrower_first_name=data.get('borrower_first_name', ''))
-                                        
-        send_email(data.get('borrower_email'), applicant_subject, applicant_html)
-        logging.info(f"Confirmation email sent to applicant {data.get('borrower_email')}")
+        send_email(data['email'], applicant_subject, applicant_html)
     except Exception as e:
-        logging.error(f"Failed to send confirmation email to {data.get('borrower_email')}: {e}")
+        logging.error(f"Failed to send confirmation email to {data['email']}: {e}")
 @socketio.on('connect')
 def handle_connect():
     logging.info("Client connected to WebSocket.")
