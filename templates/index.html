@@ -96,6 +96,90 @@
   <link rel="stylesheet" href="../static/assets/vendor/owl-carousel/css/owl.carousel.css">
   <link rel="stylesheet" href="../static/assets/css/theme.css">
   <title>Get Funded - Business Financing for Your Business</title>
+
+  <style>
+    /* MCA Loan Button Styles */
+    .mca-btn {
+      background-color: #28a745;
+      color: white;
+      padding: 10px 20px;
+      border-radius: 30px;
+      font-weight: bold;
+      position: relative;
+      overflow: visible; /* Changed from hidden to visible to allow badge to extend outside */
+      transition: all 0.3s ease;
+      box-shadow: 0 4px 15px rgba(40, 167, 69, 0.4);
+      border: none;
+    }
+
+    .mca-btn:hover {
+      background-color: #218838;
+      transform: translateY(-3px);
+      box-shadow: 0 7px 15px rgba(40, 167, 69, 0.5);
+    }
+
+    .mca-btn:active {
+      transform: translateY(-1px);
+      box-shadow: 0 3px 10px rgba(40, 167, 69, 0.4);
+    }
+
+    /* Enhanced NEW Badge Styles */
+    .new-badge {
+      position: absolute;
+      top: -15px;       /* Moved higher up */
+      right: -20px;     /* Moved further right */
+      background-color: #ff6b6b;
+      color: white;
+      font-size: 14px;  /* Slightly larger text */
+      font-weight: bold;
+      padding: 6px 12px; /* Larger padding */
+      border-radius: 15px;
+      box-shadow: 0 3px 7px rgba(0,0,0,0.3);
+      animation: bounce 2s infinite;
+      transform-origin: center bottom;
+      z-index: 100;    /* Higher z-index to ensure visibility */
+      transform: rotate(15deg); /* Rotated for a sticker-like look */
+      border: 2px solid white; /* White border for contrast */
+    }
+
+    /* Pulse Animation */
+    .pulse-btn {
+      animation: pulse 2s infinite;
+    }
+
+    @keyframes pulse {
+      0% {
+        box-shadow: 0 0 0 0 rgba(40, 167, 69, 0.7);
+      }
+      70% {
+        box-shadow: 0 0 0 10px rgba(40, 167, 69, 0);
+      }
+      100% {
+        box-shadow: 0 0 0 0 rgba(40, 167, 69, 0);
+      }
+    }
+
+    /* Bounce Animation for the NEW badge */
+    @keyframes bounce {
+      0%, 20%, 50%, 80%, 100% {
+        transform: rotate(15deg) translateY(0);
+      }
+      40% {
+        transform: rotate(15deg) translateY(-10px);
+      }
+      60% {
+        transform: rotate(15deg) translateY(-5px);
+      }
+    }
+
+    /* For mobile responsiveness */
+    @media (max-width: 768px) {
+      .mca-btn {
+        margin-top: 15px;
+        display: inline-block;
+      }
+    }
+  </style>
 </head>
 
 <body>
@@ -147,6 +231,11 @@
               Partnering with us allows you access to exclusive programs not offered anywhere else!</p>
 
             <a href="form.html" class="btn btn-primary">Apply Now</a>
+            
+            <a href="mcaloanapplication.html" class="btn btn-success position-relative mca-btn pulse-btn ml-3">
+              MCA Loan
+              <span class="new-badge">NEW</span>
+            </a>
           </div>
           <div class="col-lg-6 py-3 wow zoomIn">
             <div class="img-place">
