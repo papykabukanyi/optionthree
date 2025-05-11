@@ -1,0 +1,9 @@
+User-agent: *
+Allow: /
+Disallow: /static/assets/vendor/
+
+# Optimize crawling
+Crawl-delay: 10
+
+# Sitemap location
+Sitemap: https://www.hempire-enterprise.com/sitemap.xml

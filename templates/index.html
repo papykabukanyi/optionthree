@@ -94,10 +94,186 @@
   <link rel="stylesheet" href="../static/assets/css/bootstrap.css">
   <link rel="stylesheet" href="../static/assets/css/maicons.css">
   <link rel="stylesheet" href="../static/assets/vendor/owl-carousel/css/owl.carousel.css">
-  <link rel="stylesheet" href="../static/assets/css/theme.css">
-  <title>Get Funded - Business Financing for Your Business</title>
+  <link rel="stylesheet" href="../static/assets/css/theme.css">  <title>Get Funded - Business Financing for Your Business</title>
 
   <style>
+    /* MCA Announcement Popup Styles */
+    .mca-popup-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0, 0, 0, 0.7);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      z-index: 9999;
+      opacity: 0;
+      visibility: hidden;
+      transition: opacity 0.3s ease, visibility 0.3s ease;
+    }
+    
+    .mca-popup-overlay.active {
+      opacity: 1;
+      visibility: visible;
+      animation: fadeIn 0.5s ease forwards;
+    }
+    
+    .mca-popup {
+      width: 90%;
+      max-width: 500px;
+      background: linear-gradient(135deg, #ffffff, #f5f5f5);
+      border-radius: 15px;
+      padding: 30px;
+      text-align: center;
+      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.3);
+      position: relative;
+      transform: translateY(30px);
+      opacity: 0;
+      transition: transform 0.5s ease, opacity 0.5s ease;
+      border-left: 5px solid #28a745;
+    }
+    
+    .mca-popup-overlay.active .mca-popup {
+      transform: translateY(0);
+      opacity: 1;
+      animation: slideUp 0.5s 0.2s ease forwards;
+    }
+    
+    .mca-popup-close {
+      position: absolute;
+      top: 15px;
+      right: 15px;
+      font-size: 22px;
+      color: #666;
+      cursor: pointer;
+      transition: color 0.3s ease;
+      background: none;
+      border: none;
+      padding: 0;
+      line-height: 1;
+    }
+    
+    .mca-popup-close:hover {
+      color: #ff6b6b;
+    }
+    
+    .mca-popup-title {
+      color: #28a745;
+      font-size: 24px;
+      font-weight: bold;
+      margin-bottom: 10px;
+      position: relative;
+      display: inline-block;
+    }
+    
+    .mca-popup-title:after {
+      content: '';
+      position: absolute;
+      height: 3px;
+      width: 50px;
+      background: #28a745;
+      bottom: -8px;
+      left: 50%;
+      transform: translateX(-50%);
+      border-radius: 3px;
+    }
+    
+    .mca-popup-body {
+      margin: 20px 0;
+      color: #444;
+      font-size: 16px;
+      line-height: 1.6;
+    }
+    
+    .mca-popup-apply-btn {
+      background-color: #28a745;
+      color: white;
+      padding: 12px 30px;
+      border-radius: 50px;
+      font-weight: bold;
+      border: none;
+      font-size: 16px;
+      transition: all 0.3s ease;
+      box-shadow: 0 5px 15px rgba(40, 167, 69, 0.4);
+      margin-top: 10px;
+      position: relative;
+      overflow: hidden;
+      cursor: pointer;
+      display: inline-block;
+      text-decoration: none;
+    }
+    
+    .mca-popup-apply-btn:hover {
+      background-color: #218838;
+      transform: translateY(-3px);
+      box-shadow: 0 8px 20px rgba(40, 167, 69, 0.5);
+      color: white;
+      text-decoration: none;
+    }
+    
+    .mca-popup-apply-btn:active {
+      transform: translateY(-1px);
+      box-shadow: 0 4px 10px rgba(40, 167, 69, 0.4);
+    }
+    
+    .mca-popup-apply-btn::before {
+      content: "";
+      position: absolute;
+      top: 0;
+      left: -100%;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+      transition: 0.5s;
+    }
+    
+    .mca-popup-apply-btn:hover::before {
+      left: 100%;
+    }
+    
+    .highlight {
+      color: #28a745;
+      font-weight: bold;
+    }
+    
+    /* Animations */
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+    
+    @keyframes slideUp {
+      from { transform: translateY(30px); opacity: 0.8; }
+      to { transform: translateY(0); opacity: 1; }
+    }
+    
+    @keyframes pulse {
+      0% { transform: scale(1); }
+      50% { transform: scale(1.05); }
+      100% { transform: scale(1); }
+    }
+    
+    .pulse-animation {
+      animation: pulse 2s infinite;
+    }
+    
+    /* Mobile responsiveness */
+    @media (max-width: 576px) {
+      .mca-popup {
+        padding: 20px;
+      }
+      
+      .mca-popup-title {
+        font-size: 20px;
+      }
+      
+      .mca-popup-body {
+        font-size: 14px;
+      }
+    }
+
     /* MCA Loan Button Styles */
     .mca-btn {
       background-color: #28a745;
@@ -187,6 +363,20 @@
   <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-MJXPS9NH" height="0" width="0"
       style="display:none;visibility:hidden"></iframe></noscript>
   <!-- End Google Tag Manager (noscript) -->
+  
+  <!-- MCA Loan Popup Announcement -->
+  <div class="mca-popup-overlay">
+    <div class="mca-popup">
+      <button class="mca-popup-close">&times;</button>
+      <h3 class="mca-popup-title">Merchant Cash Advance Available Now!</h3>
+      <div class="mca-popup-body">
+        <p>Need <span class="highlight">quick funding</span> for your business?</p>
+        <p>Get approved for a Merchant Cash Advance in as little as <span class="highlight">24 hours</span>!</p>
+        <p>Flexible repayment options based on your daily sales.</p>
+      </div>
+      <a href="mcaloanapplication.html" class="mca-popup-apply-btn pulse-animation">Click Here to Apply</a>
+    </div>
+  </div>
   <!-- Back to top button -->
   <div class="back-to-top"></div>
   <header>
@@ -578,11 +768,50 @@
   <script src="../static/assets/vendor/owl-carousel/js/owl.carousel.min.js"></script>
 
   <script src="../static/assets/vendor/waypoints/jquery.waypoints.min.js"></script>
-
   <script src="../static/assets/vendor/animateNumber/jquery.animateNumber.min.js"></script>
 
   <script src="../static/assets/js/theme.js"></script>
-
+  <!-- MCA Popup JavaScript -->
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      // Show popup after a small delay (500ms) to let the page load first
+      setTimeout(function() {
+        document.querySelector('.mca-popup-overlay').classList.add('active');
+      }, 500);
+      
+      // Set timer to automatically close popup after 15 seconds
+      const autoCloseTimer = setTimeout(function() {
+        closePopup();
+      }, 15000);
+      
+      // Close button functionality
+      document.querySelector('.mca-popup-close').addEventListener('click', function() {
+        clearTimeout(autoCloseTimer); // Clear the auto-close timer
+        closePopup();
+      });
+      
+      // Function to close the popup with a fade-out animation
+      function closePopup() {
+        const overlay = document.querySelector('.mca-popup-overlay');
+        overlay.style.opacity = '0';
+        setTimeout(function() {
+          overlay.classList.remove('active');
+          overlay.style.opacity = ''; // Reset to default for potential future displays
+        }, 500); // Match this with CSS transition duration
+      }
+      
+      // Prevent closing when clicking inside the popup (event bubbling)
+      document.querySelector('.mca-popup').addEventListener('click', function(e) {
+        e.stopPropagation();
+      });
+      
+      // Close when clicking outside of the popup (on the overlay)
+      document.querySelector('.mca-popup-overlay').addEventListener('click', function() {
+        clearTimeout(autoCloseTimer); // Clear the auto-close timer
+        closePopup();
+      });
+    });
+  </script>
 
 </body>
 
